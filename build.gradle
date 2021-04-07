@@ -1,5 +1,5 @@
 import arc.util.OS
-
+import Atom.Utility.Encoder
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
@@ -21,6 +21,7 @@ buildscript {
 
     dependencies{
         classpath ("com.github.Anuken.Arc:arc-core:$arcHash")
+        classpath "com.github.o7-Fire.Atomic-Library:Atomic:$atomHash"
     }
 
 }
@@ -28,8 +29,8 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'java-library'
 
-sourceCompatibility = "1.8"
-targetCompatibility = "1.8"
+sourceCompatibility = "14"
+targetCompatibility = "14"
 
 static File getLatestFolder(File fe){
     ArrayList<File> f = new ArrayList<>();
@@ -121,6 +122,10 @@ ext{
 }
 //Root Module only
 dependencies {
+    implementation "com.github.o7-Fire.Atomic-Library:Atomic:$atomHash"
+    implementation "com.github.o7-Fire.Atomic-Library:Desktop:$atomHash"
+    compileOnly ("com.github.Anuken.Mindustry:desktop:$mindustryHash")
+    implementation group: 'org.jblas', name: 'jblas', version: '1.2.5'
 
 }
 task base(type: Jar){

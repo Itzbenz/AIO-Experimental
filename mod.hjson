@@ -1,10 +1,9 @@
-name: "Example-Mods"
-displayName: "Example Mods"
-description: "Example Mods Description 
- [red] Red-Color"
-author: "Author"
-main: "Premain.Main"
+name: "o7-Experimental-Mods"
+displayName: "o7-Experimental Mods"
+description: "o7-Experimental "
+author: "Itzbenz"
+main: "org.o7.Fire.Experimental.Main"
 minGameVersion: 125
 version: 0.1.0
 hidden: true
-repo: "o7-Fire/Mindustry-Mods-Template" 
+repo: "o7-Fire/Mindustry-Experimental"

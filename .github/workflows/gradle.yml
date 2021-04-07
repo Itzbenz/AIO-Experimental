@@ -37,13 +37,8 @@ jobs:
     - name: Upload built jar file
       uses: actions/upload-artifact@v2
       with:
-        name: Example-Mods
-        path: build/libs/Example-Mods.jar
-    - name: Upload built android jar file
-      uses: actions/upload-artifact@v2
-      with:
-        name: Example-Mods-Dexed
-        path: build/libs/Example-Mods-Dexed.jar
+        name: o7-Experimental-Mods
+        path: build/libs/o7-Experimental-Mods.jar
 
     - name: Remove Old Release Drafts
       env:
@@ -75,17 +70,6 @@ jobs:
         draft: true
 
 
-    - name: Upload Dex Core
-      id: upload-release-core-dex
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-        asset_path: ./build/libs/Example-Mods-Dexed.jar
-        asset_name: dexed-Example-Mods.jar
-        asset_content_type: application/zip
-        
     - name: Upload Core
       id: upload-release-core
       uses: actions/upload-release-asset@v1
@@ -93,8 +77,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-        asset_path: ./build/libs/Example-Mods.jar
-        asset_name: Example-Mods.jar
+        asset_path: ./build/libs/o7-Experimental-Mods.jar
+        asset_name: o7-Experimental-Mods.jar
         asset_content_type: application/zip
 
 
