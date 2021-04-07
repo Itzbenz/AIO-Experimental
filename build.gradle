@@ -1,0 +1,240 @@
+import arc.util.OS
+
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.nio.file.StandardOpenOption
+
+buildscript {
+    repositories {
+        mavenLocal()
+        jcenter()
+        mavenCentral()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+        maven { url 'https://jitpack.io' }
+        jcenter()
+        google()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+
+    dependencies{
+        classpath ("com.github.Anuken.Arc:arc-core:$arcHash")
+    }
+
+}
+
+apply plugin: 'java'
+apply plugin: 'java-library'
+
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
+
+static File getLatestFolder(File fe){
+    ArrayList<File> f = new ArrayList<>();
+    if(!fe.exists())throw new FileNotFoundException(fe.getAbsolutePath());
+    File[] files = fe.listFiles();
+    f.addAll(Arrays.asList(files));
+    f.sort(new Comparator<File>() {
+        @Override
+        public int compare(File o1, File o2) {
+            return o1.getAbsolutePath() <=> o2.getAbsolutePath();
+        }
+    });
+    return f.get(f.size() - 1);
+}
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'java-library'
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+        maven { url 'https://jitpack.io' }
+        jcenter()
+    }
+
+    ext {
+
+        //automatically detect latest shit and skipping it if doesn't exists
+        sdkRoot = System.getenv("ANDROID_HOME")
+        if(sdkRoot == null)
+            sdkRoot = new File("SDK").getAbsolutePath()
+        sdkD8 = sdkRoot + "nope"
+        sdkJar = sdkRoot + "nope"
+        if(new File(sdkRoot).exists()) {
+            try {
+                sdkD8 = new File(getLatestFolder(new File(sdkRoot, 'build-tools/')), "d8").getAbsolutePath()
+                sdkJar = new File(getLatestFolder(new File(sdkRoot, "platforms/")), "android.jar").getAbsolutePath()
+            }catch(ignored){}
+        }
+        if(!new File(sdkJar).exists())
+            sdkJar = new File(sdkRoot, "nope").getAbsolutePath()
+        if(!new File(sdkD8).exists())
+            sdkD8 = new File(sdkRoot, "nope").getAbsolutePath()
+  
+
+        modhjson = ""
+        modhjson += 'name: "' + modsNname + '"\n'
+        modhjson += 'displayName: "' + modsNdisplayName + '"\n'
+        modhjson += 'description: "' + modsNdescription + '"\n'
+        modhjson += 'author: "' + modsNauthor + '"\n'
+        modhjson += 'main: "' + modsNmain + '"\n'
+        modhjson += 'minGameVersion: ' + modsNminMindustryVersion + '\n'
+        modhjson += "version: " + modsNversion +"\n"
+        modhjson += 'hidden: ' + modsNsupportVanillaServer + '\n'
+        if(project.hasProperty("githubRepo"))
+            modhjson += "repo: \"" + githubRepo +"\" \n"
+        else
+            modhjson += 'repo: "' + modsNrepo + '"\n'
+
+
+
+        //From Root to every project
+        dependencies{
+            compileOnly ("com.github.Anuken.Arc:arc-core:$arcHash"){
+                because("provided")
+            }
+            compileOnly ("com.github.Anuken.Arc:backend-sdl:$arcHash"){
+                because("provided")
+            }
+            compileOnly ("com.github.Anuken.Mindustry:core:$mindustryHash"){
+                because("provided")
+            }
+        }
+
+    }
+
+
+}
+ext{
+    try {
+        File f = new File(projectDir, "mod.hjson")
+        f.delete()
+        Files.write(f.toPath(), modhjson.toString().getBytes(), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+    } catch (Throwable) {
+    }
+
+}
+//Root Module only
+dependencies {
+
+}
+task base(type: Jar){
+    archiveFileName = modsNname + ".jar"
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    with jar
+    manifest {
+        attributes 'Main-Class': 'org.o7.Fire.Bootstrapper.Java'
+    }
+
+
+    from(rootDir){
+        include "mod.hjson"
+        include "icon.png"
+    }
+}
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+task baseJar{
+    dependsOn base
+    //collect dependencies needed for desugaring
+    if(new File(sdkD8).exists()) {
+        def files = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(sdkJar)])
+        def dependencies = files.collect { "--classpath $it.path" }.join(" ")
+        def cmd = "${sdkD8} $dependencies --min-api ${minAndroidApi} --output Dex.jar ${modsNname}.jar"
+        def dir = new File(projectDir, "build/libs/");
+        dir.mkdirs()
+        doLast {
+            if (new File(sdkD8).exists() && new File(sdkJar).exists()) {
+                println(cmd)
+                Runtime.getRuntime().exec(cmd, new String[0], dir).waitForProcessOutput(System.out, System.err)
+            }
+        }
+    }else {
+        println "No sdkD8 detected on ANDROID_HOME, skipping desugaring"
+    }
+}
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+    options.compilerArgs += ["-Xlint:deprecation", "-Xlint:unchecked"]
+    if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
+        options.compilerArgs.addAll(['--release', '8'])
+    }
+}
+
+task makeJar(type: Jar){
+    dependsOn baseJar
+    if(new File(sdkD8).exists()) {
+        archiveFileName = modsNname + "-Dexed.jar"
+
+        duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+        if (new File(sdkD8).exists()) {
+            from() {
+                zipTree(new File(projectDir, "build/libs/Dex.jar"))
+            }
+        }
+    }else {
+        println "No sdkD8 detected on ANDROID_HOME, skipping making Dex Jar"
+    }
+    from() {
+        zipTree(new File(projectDir, "build/libs/${modsNname}.jar"))
+    }
+}
+task deploy(type: Jar) {
+    dependsOn makeJar
+}
+artifacts {
+    archives sourcesJar
+    archives base
+}
+
+
+static void downloadMindustry(URL u, File mindustry){
+    mindustry.getParentFile().mkdirs();
+    if(mindustry.exists())return ;
+    mindustry.createNewFile();
+    System.out.println("Downloading: " + u.toString());
+    FileOutputStream f = new FileOutputStream(mindustry);
+    arc.util.io.Streams.copy(u.openStream(), f);
+    f.close()
+
+}
+static void copyToMindustry(File f){
+    File target = new File(OS.getAppDataDirectoryString("Mindustry"))
+    target = new File(target, "mods")
+    target = new File(target, f.getName())
+    target.getParentFile().mkdirs()
+    System.out.println("Copying: " + f.getAbsolutePath() + " to "+ target.getAbsolutePath());
+    Files.copy(f.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+}
+task download(){
+    doLast{
+        URL u = new URL("https://github.com/Anuken/Mindustry/releases/download/" + mindustryHash + "/Mindustry.jar");
+        File mindustry = new File(new File(new File(OS.getAppDataDirectoryString("Mindustry")), "build/cache/"), u.getFile());
+        downloadMindustry(u, mindustry);
+    }
+}
+task copyMods(){
+    dependsOn base
+    doLast{
+        copyToMindustry(new File(new File(projectDir.toString()), "build/libs/"+modsNname+".jar"))
+    }
+}
+task run(type: JavaExec) {
+    dependsOn download
+    dependsOn copyMods
+    URL u = new URL("https://github.com/Anuken/Mindustry/releases/download/" + mindustryHash + "/Mindustry.jar");
+    File mindustry = new File(new File(new File(OS.getAppDataDirectoryString("Mindustry")), "build/cache/"), u.getFile());
+    classpath = files(mindustry.getAbsolutePath())
+    classpath += sourceSets.main.runtimeClasspath
+    main = "mindustry.desktop.DesktopLauncher"
+}
