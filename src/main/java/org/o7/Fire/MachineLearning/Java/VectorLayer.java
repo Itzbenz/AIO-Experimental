@@ -1,7 +1,7 @@
 package org.o7.Fire.MachineLearning.Java;
 
+import org.o7.Fire.MachineLearning.Framework.ActivationFunction;
 import org.o7.Fire.MachineLearning.Framework.Layer;
-import org.o7.Fire.MachineLearning.Framework.NeuralActivation;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -13,13 +13,13 @@ public class VectorLayer implements Layer<Float, NodeLayer>, Serializable {
     protected Float[] bias;
     protected Float[][] weight;
     protected int output, input;
-    protected NeuralActivation activation;
+    protected ActivationFunction activation;
     
     public VectorLayer(int input, int output) {
-        this(input, output, NeuralActivation.Identity);
+        this(input, output, ActivationFunction.Identity);
     }
     
-    public VectorLayer(int input, int output, NeuralActivation activation) {
+    public VectorLayer(int input, int output, ActivationFunction activation) {
         if (input < 1 || output < 1) throw new IllegalArgumentException("not positive integer");
         this.input = input;
         this.output = output;
@@ -36,7 +36,7 @@ public class VectorLayer implements Layer<Float, NodeLayer>, Serializable {
         }
         
     }
-    
+
     public void updateBias() {
         for (int i = 0; i < bias.length; i++) {
             float r = getFloat();
@@ -68,11 +68,11 @@ public class VectorLayer implements Layer<Float, NodeLayer>, Serializable {
         return output;
     }
     
-    public NeuralActivation getActivation() {
+    public ActivationFunction getActivation() {
         return activation;
     }
     
-    public VectorLayer setActivation(NeuralActivation activation) {
+    public VectorLayer setActivation(ActivationFunction activation) {
         this.activation = activation;
         return this;
     }

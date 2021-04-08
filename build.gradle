@@ -125,7 +125,8 @@ dependencies {
     implementation "com.github.o7-Fire.Atomic-Library:Atomic:$atomHash"
     implementation "com.github.o7-Fire.Atomic-Library:Desktop:$atomHash"
     compileOnly ("com.github.Anuken.Mindustry:desktop:$mindustryHash")
-    implementation group: 'org.jblas', name: 'jblas', version: '1.2.5'
+
+
 
 }
 task base(type: Jar){

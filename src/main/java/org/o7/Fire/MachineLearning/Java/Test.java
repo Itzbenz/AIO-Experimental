@@ -1,11 +1,9 @@
-package org.o7.Fire.Experimental;
+package org.o7.Fire.MachineLearning.Java;
 
 import Atom.Time.Time;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.o7.Fire.MachineLearning.Framework.NeuralActivation;
-import org.o7.Fire.MachineLearning.Java.VectorLayer;
-import org.o7.Fire.MachineLearning.Java.VectorNeuralNetwork;
+import org.o7.Fire.MachineLearning.Framework.ActivationFunction;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,11 +25,11 @@ public class Test {
 	
 	public static void main(String[] args) throws IOException {
 		if (!model.exists()) {
-			//basic = VectorNeuralNetwork.random(NeuralActivation.Tanh, 2, 10, 2, 3, 3);
+			//basic = VectorNeuralNetwork.random(NeuralFunction.Tanh, 2, 10, 2, 3, 3);
 			basic = new VectorNeuralNetwork();
-			basic.add(new VectorLayer(2, 4, NeuralActivation.Tanh));
-			basic.add(new VectorLayer(4, 3, NeuralActivation.Tanh));
-			basic.add(new VectorLayer(3, 1, NeuralActivation.Binary));
+			basic.add(new VectorLayer(2, 4, ActivationFunction.Tanh));
+			basic.add(new VectorLayer(4, 3, ActivationFunction.Tanh));
+			basic.add(new VectorLayer(3, 1, ActivationFunction.Binary));
 		}else {
 			System.out.println("Loading from: " + model.getPath());
 			basic = gson.fromJson(Files.readString(model.toPath()), VectorNeuralNetwork.class);

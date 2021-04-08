@@ -1,22 +1,22 @@
 package org.o7.Fire.MachineLearning.Java;
 
 import Atom.Utility.Random;
-import org.o7.Fire.MachineLearning.Framework.NeuralActivation;
+import org.o7.Fire.MachineLearning.Framework.ActivationFunction;
 
 import java.io.Serializable;
 
 public class VectorNeuralNetwork extends BasicNeuralNetwork<VectorLayer, NodeLayer> implements Serializable {
 	public static VectorNeuralNetwork random(int input, int maxNode, int minNode, int output, int layer) {
-		return random(NeuralActivation.Identity, input, maxNode, minNode, output, layer);
+		return random(ActivationFunction.Identity, input, maxNode, minNode, output, layer);
 	}
 	
-	public static VectorNeuralNetwork random(NeuralActivation activation, int input, int maxNode, int minNode, int output, int layer) {
+	public static VectorNeuralNetwork random(ActivationFunction activation, int input, int maxNode, int minNode, int output, int layer) {
 		VectorNeuralNetwork basic = new VectorNeuralNetwork();
 		addRandomLayer(activation, basic, input, maxNode, minNode, output, layer);
 		return basic;
 	}
 	
-	public static void addRandomLayer(NeuralActivation activation, VectorNeuralNetwork basic, int input, int maxNode, int minNode, int output, int layer) {
+	public static void addRandomLayer(ActivationFunction activation, VectorNeuralNetwork basic, int input, int maxNode, int minNode, int output, int layer) {
 		int nInput = Random.getInt(minNode, maxNode);
 		int nOutput = Random.getInt(minNode, maxNode);
 		basic.add(new VectorLayer(input, nInput, activation));// 2, 6 ?
