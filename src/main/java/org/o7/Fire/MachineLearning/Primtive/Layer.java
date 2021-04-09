@@ -13,11 +13,12 @@ public interface Layer extends Serializable {
 	
 	double[][] getWeight();
 	
+	void setActivation(NeuralFunction function);
+	
 	default double[] process(double[] array) {
 		if (array.length != getInputSize())
 			throw new IllegalArgumentException("Input size expected: " + getInputSize() + ", get: " + array.length);
 		double[] output = new double[getOutputSize()];
-		//vector operation would be great
 		for (int i = 0; i < getOutputSize(); i++) {
 			float node = 0;
 			for (int j = 0; j < array.length; j++) {

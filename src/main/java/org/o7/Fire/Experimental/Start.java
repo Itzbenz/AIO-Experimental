@@ -15,6 +15,6 @@ public class Start {
 		bootstrap.loadCurrentClasspath();
 		bootstrap.loadClasspath();
 		bootstrap.getLoader().addURL(mindustry);
-		bootstrap.loadMain("Premain.MindustryMain", args);
+		bootstrap.loadMain("org.o7.Fire.Experimental.MindustryMain", args);
 	}
 }
