@@ -5,8 +5,8 @@ import io.jenetics.Genotype;
 import org.o7.Fire.MachineLearning.Primtive.NeuralFunction;
 
 public class RawBasicNeuralNet implements RawNeuralNet {
-	protected final double[] raw;
-	protected final int[] output;
+	public final double[] raw;
+	public final int[] output;
 	
 	public RawBasicNeuralNet(Genotype<DoubleGene> raw, int[] output) {
 		double[] gen = new double[raw.chromosome().length()];
