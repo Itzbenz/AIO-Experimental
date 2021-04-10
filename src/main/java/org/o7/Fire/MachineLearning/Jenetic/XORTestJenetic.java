@@ -49,7 +49,7 @@ public class XORTestJenetic {
 		return eval(net);
 	}
 	
-	static Supplier<Timer> timerSupplier = () -> new Timer(TimeUnit.SECONDS, 4);
+	static Supplier<Timer> timerSupplier = () -> new Timer(TimeUnit.SECONDS, 3);
 	static ThreadLocal<Timer> timerThreadLocal = ThreadLocal.withInitial(timerSupplier);
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
@@ -88,7 +88,7 @@ public class XORTestJenetic {
 				engine.stream()
 						//.limit(Limits.bySteadyFitness(14))
 						.limit(XORTestJenetic::timeOut)//assad
-						.limit(Limits.byExecutionTime(Duration.ofSeconds(20))).peek(stat).sorted(Comparator.comparing(o -> o.bestPhenotype().fitness()))//assad
+						.limit(Limits.byExecutionTime(Duration.ofSeconds(60))).peek(stat).sorted(Comparator.comparing(o -> o.bestPhenotype().fitness()))//assad
 						.collect(Collectors.toList())//assad
 				//)
 				;//wtf
