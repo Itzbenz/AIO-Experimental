@@ -1,6 +1,6 @@
 name: "o7-Experimental-Mods"
 displayName: "o7-Experimental Mods"
-description: "o7-Experimental "
+description: "o7-Experimental"
 author: "Itzbenz"
 main: "org.o7.Fire.Experimental.Main"
 minGameVersion: 125

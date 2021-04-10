@@ -2,6 +2,7 @@ package org.o7.Fire.MachineLearning.Jenetic;
 
 import Atom.File.SerializeData;
 import Atom.Time.Time;
+import Atom.Time.Timer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.jenetics.*;
@@ -20,6 +21,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class XORTestJenetic {
@@ -47,7 +49,11 @@ public class XORTestJenetic {
 		return eval(net);
 	}
 	
+	static Supplier<Timer> timerSupplier = () -> new Timer(TimeUnit.SECONDS, 4);
+	static ThreadLocal<Timer> timerThreadLocal = ThreadLocal.withInitial(timerSupplier);
+	
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
+		
 		System.out.println("Controllable knob: " + knob);
 		System.out.println("Knob range: " + -maxRange + " to " + maxRange);
 		// 1.) Define the genotype (factory) suitable
@@ -66,9 +72,10 @@ public class XORTestJenetic {
 		EvolutionStatistics<Double, DoubleMomentStatistics> stat = EvolutionStatistics.ofNumber();
 		// 3.) Create the execution environment.
 		Engine<DoubleGene, Double> engine = Engine.builder(XORTestJenetic::eval, Codecs.ofVector(DoubleRange.of(-maxRange, maxRange), knob))//
-				.populationSize(500)//
+				.populationSize(20)//
 				.optimize(Optimize.MINIMUM)//because lower is better
-				.alterers(new Mutator<>(0.03), new MeanAlterer<>(0.6)).build();
+				.alterers(new Mutator<>(0.03), new MeanAlterer<>(0.6))//assad
+				.build();
 		
 		System.out.println("2. Testing population");
 		System.out.println("3. Euthanasie/Modify unfit population");
@@ -80,7 +87,9 @@ public class XORTestJenetic {
 				//RandomRegistry.with(new Random(123), r ->
 				engine.stream()
 						//.limit(Limits.bySteadyFitness(14))
-						.limit(Limits.byExecutionTime(Duration.ofSeconds(10))).peek(stat).peek(XORTestJenetic::evolutionNews).sorted(Comparator.comparing(o -> o.bestPhenotype().fitness())).collect(Collectors.toList())
+						.limit(XORTestJenetic::timeOut)//assad
+						.limit(Limits.byExecutionTime(Duration.ofSeconds(20))).peek(stat).sorted(Comparator.comparing(o -> o.bestPhenotype().fitness()))//assad
+						.collect(Collectors.toList())//assad
 				//)
 				;//wtf
 		
@@ -92,17 +101,36 @@ public class XORTestJenetic {
 		RawBasicNeuralNet bestNet = new RawBasicNeuralNet(best, structure);
 		System.out.println("Best loss: " + eval(best));
 		System.out.println("Worst loss: " + eval(worst));
+		System.out.println("Total Population: " + list.size());
 		System.out.println("Took: " + t.elapsedS());
 		System.out.println("Note: lower better");
 		System.out.println();
 		
 		System.out.println("Stat for nerd:");
-		System.out.println(stat);
+		System.out.println(String.valueOf(stat));
 		System.out.println("Note: lower better");
 		model.delete();
 		lastPopulation.delete();
 		Files.writeString(model.toPath(), gson.toJson(bestNet), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 		SerializeData.dataOut(bestPop.population(), lastPopulation);
+	}
+	
+	public static boolean timeOut(EvolutionResult<DoubleGene, Double> evolutionResult) {
+		if (timerThreadLocal.get() == null) return false;
+		boolean sample = (evolutionResult.generation() / sampleEvery) == sampleEvery;
+		if (beest == null || beest.fitness().compareTo(evolutionResult.bestPhenotype().fitness()) > 0 || sample) {
+			beest = evolutionResult.bestPhenotype();
+			System.out.println();
+			System.out.println("Generation: " + evolutionResult.generation());
+			System.out.println("Fitness: " + evolutionResult.bestPhenotype().fitness());
+			RawBasicNeuralNet net = new RawBasicNeuralNet(evolutionResult.bestPhenotype().genotype(), structure);
+			for (int i = 0; i < X.length; i++) {
+				System.out.println(i + ". XOR: " + Arrays.toString(X[i]) + ", Output: " + net.process(X[i])[0] + ", Expected: " + Y[i][0]);
+			}
+			timerThreadLocal.get().reset();
+		}
+		if (timerThreadLocal.get().get()) timerThreadLocal.set(null);
+		return true;
 	}
 	
 	public static void evolutionNews(EvolutionResult<DoubleGene, Double> evolutionResult) {
