@@ -1,6 +1,6 @@
 package org.o7.Fire.MachineLearning.Primtive;
 
-public class SimpleNeuralNet extends BasicNeuralNet<SimpleLayer> {
+public class SimpleNeuralNet extends BasicNeuralNet<SimpleLayer> implements Cloneable {
 	public SimpleNeuralNet() {
 		super();
 	}

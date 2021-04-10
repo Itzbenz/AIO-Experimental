@@ -1,7 +1,6 @@
 package org.o7.Fire.MachineLearning.Java;
 
 import Atom.Time.Time;
-import Atom.Utility.Random;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.o7.Fire.MachineLearning.Framework.ActivationFunction;
@@ -21,10 +20,6 @@ public class XORTestObject {
 	static boolean passed = false, training = false;
 	static File model = new File("XOR-Vector-NeuralNetwork.json");
 	static VectorNeuralNetwork basic;
-	
-	static {
-		Random.seed(123);
-	}
 	
 	public static void main(String[] args) throws IOException {
 		if (!model.exists()) {

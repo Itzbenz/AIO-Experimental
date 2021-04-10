@@ -6,9 +6,10 @@ import arc.util.Nullable;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-public class BasicNeuralNet<L extends Layer> extends ArrayList<L> implements NeuralNet, Serializable {
-	protected @Nullable
-	LayerFactory<L> factory;
+public class BasicNeuralNet<L extends Layer> implements NeuralNet<L>, Serializable {
+	protected final ArrayList<L> layers = new ArrayList<>();
+	@Nullable
+	protected transient LayerFactory<L> factory;
 	
 	public BasicNeuralNet() {
 	
@@ -17,6 +18,10 @@ public class BasicNeuralNet<L extends Layer> extends ArrayList<L> implements Neu
 	public BasicNeuralNet(int input, int output, LayerFactory<L> factory) {
 		add(factory.produce(input, output));
 		this.factory = factory;
+	}
+	
+	public void add(L produce) {
+		layers.add(produce);
 	}
 	
 	public void setFactory(LayerFactory<L> factory) {
@@ -39,6 +44,14 @@ public class BasicNeuralNet<L extends Layer> extends ArrayList<L> implements Neu
 		return size() < 1 ? 0 : get(0).getInputSize();
 	}
 	
+	private L get(int i) {
+		return layers.get(i);
+	}
+	
+	public int size() {
+		return layers.size();
+	}
+	
 	public int getOutputSize() {
 		return size() < 1 ? 0 : get(size() - 1).getOutputSize();
 	}
@@ -51,7 +64,7 @@ public class BasicNeuralNet<L extends Layer> extends ArrayList<L> implements Neu
 	
 	@Override
 	public double[] process(double[] input) {
-		for (Layer p : this) {
+		for (Layer p : layers) {
 			input = p.process(input);
 		}
 		return input;
@@ -60,7 +73,7 @@ public class BasicNeuralNet<L extends Layer> extends ArrayList<L> implements Neu
 	public String visualizeString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("#".repeat(getInputSize())).append(" ").append(getInputSize());
-		for (Layer l : this) {
+		for (Layer l : layers) {
 			sb.append(System.lineSeparator());
 			int output = Math.max(0, l.getOutputSize());
 			int input = Math.max(0, l.getInputSize());
@@ -77,7 +90,7 @@ public class BasicNeuralNet<L extends Layer> extends ArrayList<L> implements Neu
 	}
 	
 	public void update() {
-		for (Layer l : this) {
+		for (Layer l : layers) {
 			NeuralFunction.assignRandom(l.getBias());
 			double[][] weight = l.getWeight();
 			for (double[] f : weight) {

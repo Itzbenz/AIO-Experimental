@@ -126,8 +126,6 @@ dependencies {
     implementation "com.github.o7-Fire.Atomic-Library:Desktop:$atomHash"
     compileOnly ("com.github.Anuken.Mindustry:desktop:$mindustryHash")
 
-
-
 }
 task base(type: Jar){
     archiveFileName = modsNname + ".jar"
@@ -137,7 +135,7 @@ task base(type: Jar){
     }
     with jar
     manifest {
-        attributes 'Main-Class': 'org.o7.Fire.Bootstrapper.Java'
+        attributes 'Main-Class': 'org.o7.Fire.Experimental.Java'
     }
 
 
@@ -169,13 +167,7 @@ task baseJar{
         println "No sdkD8 detected on ANDROID_HOME, skipping desugaring"
     }
 }
-tasks.withType(JavaCompile) {
-    options.encoding = "UTF-8"
-    options.compilerArgs += ["-Xlint:deprecation", "-Xlint:unchecked"]
-    if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-        options.compilerArgs.addAll(['--release', '8'])
-    }
-}
+
 
 task makeJar(type: Jar){
     dependsOn baseJar

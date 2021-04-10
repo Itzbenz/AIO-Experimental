@@ -29,6 +29,7 @@ public class SimpleLayer implements Layer {
 			NeuralFunction.assignRandom(d);
 	}
 	
+	
 	@Override
 	public int getInputSize() {
 		return inputSize;
