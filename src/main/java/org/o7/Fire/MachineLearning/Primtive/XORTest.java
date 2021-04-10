@@ -12,12 +12,13 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 public class XORTest {
+	static File model = new File("XOR-Simple-NeuralNetwork.json");
 	static Gson gson = new GsonBuilder().setPrettyPrinting().create();
 	static double[][] X = {{0F, 0F}, {1F, 0F}, {0F, 1F}, {1F, 1F}};
 	static double[][] Y = {{0F}, {1F}, {1F}, {0F}};
 	static long iteration = 0, sampleEvery = 1000;
 	static boolean passed = false, training = false;
-	static File model = new File("XOR-Simple-NeuralNetwork.json");
+	
 	static SimpleNeuralNet basic;
 	
 	

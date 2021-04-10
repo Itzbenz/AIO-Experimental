@@ -38,6 +38,10 @@ public class XORGeneticTest {
 		}
 		
 		Arrays.sort(population);
+		System.out.println("Top 1 Model:");
+		System.out.println(population[0].visualizeString());
+		System.out.println("Top 100 Model:");
+		System.out.println(population[99].visualizeString());
 		System.out.println("Top 1 Last Error: " + population[0].lastError());
 		System.out.println("Top 100 Last Error: " + population[99].lastError());
 		System.out.println("Finished in: " + t.elapsedS());
