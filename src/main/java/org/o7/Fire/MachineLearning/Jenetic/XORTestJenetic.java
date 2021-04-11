@@ -37,7 +37,7 @@ public class XORTestJenetic {
 	public static double eval(RawBasicNeuralNet net) {
 		double dd = 0;
 		for (int i = 0; i < X.length; i++) {
-			dd += net.error(X[i], Y[i]);
+			dd += net.error(X[i], Y[i]);//or try to do action then return reward and you get neural network reinforcement learning genetic algorithm
 		}
 		return dd;
 	}

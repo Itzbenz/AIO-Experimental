@@ -126,6 +126,7 @@ dependencies {
     implementation "com.github.o7-Fire.Atomic-Library:Desktop:$atomHash"
     compileOnly ("com.github.Anuken.Mindustry:desktop:$mindustryHash")
     implementation group: 'io.jenetics', name: 'jenetics', version: '6.2.0'
+    implementation group: 'org.ejml', name: 'ejml-simple', version: '0.40'
 
 
 }
