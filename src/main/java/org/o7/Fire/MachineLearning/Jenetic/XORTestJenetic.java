@@ -33,6 +33,11 @@ public class XORTestJenetic {
 	static int[] structure = new int[]{5, 4, 5, 3, 1};//prob gonna do genetic for this too
 	static int knob = RawNeuralNet.needRaw(2, structure);
 	static int maxRange = 100;
+	static Phenotype<DoubleGene, Double> beest = null;
+	static long sampleEvery = 100;
+	static int maxCollectedPopulation = 100;
+	static Supplier<Timer> timerSupplier = () -> new Timer(TimeUnit.SECONDS, 10);
+	static ThreadLocal<Timer> timerThreadLocal = ThreadLocal.withInitial(timerSupplier);
 	
 	public static double eval(RawBasicNeuralNet net) {
 		double dd = 0;
@@ -42,17 +47,10 @@ public class XORTestJenetic {
 		return dd;
 	}
 	
-	static Phenotype<DoubleGene, Double> beest = null;
-	static long sampleEvery = 100;
-	static int maxCollectedPopulation = 100;
-	
 	public static double eval(double[] gt) {
 		RawBasicNeuralNet net = new RawBasicNeuralNet(gt, structure);
 		return eval(net);
 	}
-	
-	static Supplier<Timer> timerSupplier = () -> new Timer(TimeUnit.SECONDS, 10);
-	static ThreadLocal<Timer> timerThreadLocal = ThreadLocal.withInitial(timerSupplier);
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
 		
@@ -70,7 +68,7 @@ public class XORTestJenetic {
 		}
 		Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2, Pool.daemonFactory);
 		
-		System.out.println("1. Making random population");
+		
 		Factory<Genotype<DoubleGene>> gtf = Genotype.of(DoubleChromosome.of(-maxRange, maxRange, knob));
 		// Codecs.ofVector(DoubleRange.of(-maxRange,maxRange), knob);
 		EvolutionStatistics<Double, DoubleMomentStatistics> stat = EvolutionStatistics.ofNumber();
@@ -80,8 +78,8 @@ public class XORTestJenetic {
 				.optimize(Optimize.MINIMUM)//because lower is better
 				.alterers(new Mutator<>(0.03), new MeanAlterer<>(0.6))//assad
 				.executor(executor).build();
-		
-		System.out.println("2. Testing population");
+		System.out.println("1. Making random population");
+		System.out.println("2. Test population");
 		System.out.println("3. Euthanasie/Modify unfit population");
 		System.out.println("4. Back to 1");
 		// 4.) Start the execution (evolution) and
@@ -119,11 +117,10 @@ public class XORTestJenetic {
 				//.filter(XORTestJenetic::evolutionNews)
 				.peek(stat).sorted(Comparator.comparing(o -> o.bestPhenotype().fitness())).collect(Collectors.toCollection(() -> list));//assad
 		//)
-		;//wtf
+		//wtf
 		
 		System.out.println();
 		EvolutionResult<DoubleGene, Double> bestPop = list.get(0);
-		lastPop = bestPop.population();
 		best = bestPop.bestPhenotype().genotype();
 		worst = list.get(list.size() - 1).bestPhenotype().genotype();
 		RawBasicNeuralNet bestNet = new RawBasicNeuralNet(best, structure);
@@ -135,7 +132,7 @@ public class XORTestJenetic {
 		System.out.println();
 		
 		System.out.println("Stat for nerd:");
-		System.out.println(String.valueOf(stat));
+		System.out.println(stat);
 		System.out.println("Note: lower better");
 		model.delete();
 		lastPopulation.delete();

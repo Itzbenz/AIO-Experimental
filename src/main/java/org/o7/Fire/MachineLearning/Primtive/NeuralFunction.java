@@ -1,5 +1,7 @@
 package org.o7.Fire.MachineLearning.Primtive;
 
+import Atom.Utility.Random;
+
 import java.util.function.Function;
 
 import static Atom.Utility.Random.getBool;
@@ -50,6 +52,12 @@ public enum NeuralFunction {
 	
 	public double process(double f) {
 		return function.apply(f);
+	}
+	
+	public static void assignRandom(int[] d, int min, int max) {
+		for (int i = 0; i < d.length; i++) {
+			d[i] = Random.getInt(min, max);
+		}
 	}
 	
 	public static void assignRandom(double[] d) {

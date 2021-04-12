@@ -17,14 +17,21 @@ public class RawBasicNeuralNet implements RawNeuralNet {
 		this.output = output;
 	}
 	
-	public RawBasicNeuralNet(double[] raw, int[] output) {
+	protected NeuralFunction function = NeuralFunction.Identity;
+	
+	public RawBasicNeuralNet(double[] raw, int[] structure) {
 		this.raw = raw;
-		this.output = output;
+		this.output = structure;
+	}
+	
+	public RawBasicNeuralNet setFunction(NeuralFunction function) {
+		this.function = function;
+		return this;
 	}
 	
 	@Override
 	public double activation(double d) {
-		return NeuralFunction.Thanh(d);
+		return function.process(d);
 	}
 	
 	@Override
