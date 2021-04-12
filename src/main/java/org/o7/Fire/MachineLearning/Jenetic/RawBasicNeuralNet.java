@@ -24,7 +24,7 @@ public class RawBasicNeuralNet implements RawNeuralNet {
 	
 	@Override
 	public double activation(double d) {
-		return NeuralFunction.Tanh(d);
+		return NeuralFunction.Thanh(d);
 	}
 	
 	@Override

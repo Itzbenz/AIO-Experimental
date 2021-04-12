@@ -6,7 +6,7 @@ import static Atom.Utility.Random.getBool;
 import static Atom.Utility.Random.getDouble;
 
 public enum NeuralFunction {
-	Identity(NeuralFunction::Identity), Relu(NeuralFunction::Relu), Tanh(NeuralFunction::Tanh), Binary(NeuralFunction::Binary), Sigmoid(NeuralFunction::Sigmoid);
+	Identity(NeuralFunction::Identity), Relu(NeuralFunction::Relu), Tanh(NeuralFunction::Thanh), Binary(NeuralFunction::Binary), Sigmoid(NeuralFunction::Sigmoid);
 	
 	transient Function<Double, Double> function;
 	
@@ -30,7 +30,7 @@ public enum NeuralFunction {
 		return Math.min(Math.max(0, val), 100);
 	}
 	
-	public static double Tanh(double val) {
+	public static double Thanh(double val) {
 		return (2.0 / (1 + Math.pow(Math.E, -2 * val / 10.0))) - 1;
 	}
 	

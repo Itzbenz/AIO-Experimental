@@ -85,7 +85,7 @@ public class Main extends Mod {
 						y1 += offset;//offset 1 to center current layer box
 					}
 					for (int j = 0; j < nodeCount; j++) {//for node in layer
-						Drawf.circles(x1, y1, (4f * scale) / Vars.renderer.getDisplayScale());//draw node
+						Drawf.circles(x1, y1, (6f * scale) / Vars.renderer.getDisplayScale());//draw node
 						if (i != 0) {
 							for (int i1 = 0; i1 < lastPosX[i - 1].length; i1++) {
 								double weight = basicNeuralNet.getRaw(index);//100 - -100
