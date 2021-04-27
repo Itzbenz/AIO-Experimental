@@ -13,7 +13,6 @@ import io.jenetics.util.DoubleRange;
 import io.jenetics.util.Factory;
 import io.jenetics.util.ISeq;
 import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
 import org.o7.Fire.MachineLearning.Framework.Chart;
 import org.o7.Fire.MachineLearning.Framework.RawBasicNeuralNet;
 import org.o7.Fire.MachineLearning.Framework.RawNeuralNet;
@@ -59,6 +58,8 @@ public class XORTestJenetic {
 	
 	//public static Map<Long, Double> generationScore = Collections.synchronizedMap(new HashMap<>());
 	public static volatile XYSeries score = new XYSeries("Fitness");
+	
+	public static final XYSeries evalScore = new XYSeries("Eval Score"), fitnessScore = new XYSeries("Fitness");
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
 		
@@ -118,8 +119,7 @@ public class XORTestJenetic {
 		});
 
 		//RandomRegistry.with(new Random(123), r ->
-		engine.stream()
-				//.limit(Limits.bySteadyFitness(14))
+		engine.stream().limit(Limits.bySteadyFitness(50))
 				.limit(XORTestJenetic::timeOut)//assad
 				.limit(Limits.byExecutionTime(Duration.ofSeconds(60)))
 				//.filter(XORTestJenetic::evolutionNews)
@@ -150,31 +150,37 @@ public class XORTestJenetic {
 		//	System.out.print(s.getKey()+","+s.getValue()+",");
 		//	score.add(s.getKey(),s.getValue());
 		//}
-		
-		Chart chart = new Chart("Fitness Overtime", "Generation", "Fitness");
-		chart.setDataset(new XYSeriesCollection(score));
+		String assad = "Loss";
+		Chart chart = new Chart(assad + " Overtime", "Generation", assad);
+		chart.setSeries(evalScore, fitnessScore);
+		chart.spawn();
 		Files.writeString(model.toPath(), gson.toJson(bestNet), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 		SerializeData.dataOut(bestPop.population(), lastPopulation);
 		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
-		for (Thread assad : threadSet)
-			if (!assad.isDaemon())
-				System.out.println(assad.getId() + ". " + assad.getName() + " alive ? " + assad.isAlive());
+		for (Thread thread : threadSet)
+			if (!thread.isDaemon())
+				System.out.println(thread.getId() + ". " + thread.getName() + " alive ? " + thread.isAlive());
 	}
-	
+
 	public static boolean timeOut(EvolutionResult<DoubleGene, Double> evolutionResult) {
 		if (timerThreadLocal.get() == null) return false;
-		score.add(evolutionResult.generation(), evolutionResult.bestFitness());
+		double eval = eval(evolutionResult.bestPhenotype().genotype());
+		fitnessScore.add(evolutionResult.generation(), evolutionResult.bestPhenotype().fitness());
+		evalScore.add(evolutionResult.generation(), eval);
 		boolean sample = (evolutionResult.generation() / sampleEvery) == sampleEvery;
 		if (beest == null || beest.fitness().compareTo(evolutionResult.bestPhenotype().fitness()) > 0 || sample) {
 			beest = evolutionResult.bestPhenotype();
+			/*
 			System.out.println();
 			System.out.println("Generation: " + evolutionResult.generation());
 			System.out.println("Loss: " + evolutionResult.bestPhenotype().fitness());
+			
+			
 			RawBasicNeuralNet net = new RawBasicNeuralNet(evolutionResult.bestPhenotype().genotype(), structure);
 			for (int i = 0; i < X.length; i++) {
 				System.out.println(i + ". XOR: " + Arrays.toString(X[i]) + ", Output: " + net.process(X[i])[0] + ", Expected: " + Y[i][0]);
 			}
-			
+			 */
 			//generationScore.put(evolutionResult.generation(), evolutionResult.bestFitness());
 			timerThreadLocal.get().reset();
 		}

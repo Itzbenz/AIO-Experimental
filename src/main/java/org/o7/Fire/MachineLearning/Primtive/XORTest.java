@@ -4,6 +4,8 @@ import Atom.Time.Time;
 import Atom.Utility.Random;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.jfree.data.xy.XYSeries;
+import org.o7.Fire.MachineLearning.Framework.Chart;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +23,7 @@ public class XORTest {
 	
 	static SimpleNeuralNet basic;
 	
+	public static final XYSeries fitnessScore = new XYSeries("Fitness");
 	
 	public static void main(String[] args) throws IOException {
 		if (!model.exists()) {
@@ -41,14 +44,15 @@ public class XORTest {
 		Time time = new Time(TimeUnit.MILLISECONDS);
 		while (!passed) {
 			passed = true;
+			double f = 0;
 			for (int i = 0; i < X.length; i++) {
 				//System.out.println("XOR: " + Arrays.toString(X[i]) + ", Output: " + basic.process(X[i])[0] + ", Expected: " + Y[i][0]);
-				double f = basic.error(X[i], Y[i]);
-				if ((int) f > 0.5) {
+				f += basic.error(X[i], Y[i]);
+				if (f > 0.5) {
 					passed = false;
-					break;
 				}
 			}
+			fitnessScore.add(iteration, f);
 			if ((iteration % sampleEvery) == 0) {
 				System.out.println("Iteration: " + iteration);
 				for (int i = 0; i < X.length; i++) {
@@ -72,5 +76,9 @@ public class XORTest {
 		}
 		System.out.println();
 		System.out.println(basic.visualizeString());
+		String assad = "Loss";
+		Chart chart = new Chart(assad + " Overtime", "Generation", assad);
+		chart.setSeries(fitnessScore);
+		chart.spawn();
 	}
 }

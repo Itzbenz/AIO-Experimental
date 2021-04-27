@@ -30,14 +30,16 @@ public class Chart extends JFrame {
 		setVisible(true);
 	}
 	
+	public static Color color = Color.gray, textColor = Color.white;
+	
 	public void initUI() {
 		
 		
 		JFreeChart chart = createChart(dataset);
 		ChartPanel chartPanel = new ChartPanel(chart);
 		chartPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-		chartPanel.setBackground(Color.white);
-		
+		chartPanel.setBackground(color);
+		setBackground(color);
 		add(chartPanel);
 		
 		pack();
@@ -52,32 +54,8 @@ public class Chart extends JFrame {
 		super.setVisible(b);
 	}
 	
-	public XYDataset createDataset() {
-		
-		XYSeries series1 = new XYSeries("2014");
-		series1.add(18, 530);
-		series1.add(20, 580);
-		series1.add(25, 740);
-		series1.add(30, 901);
-		series1.add(40, 1300);
-		series1.add(50, 2219);
-		
-		XYSeries series2 = new XYSeries("2016");
-		series2.add(18, 567);
-		series2.add(20, 612);
-		series2.add(25, 800);
-		series2.add(30, 980);
-		series2.add(40, 1210);
-		series2.add(50, 2350);
-		
-		var dataset = new XYSeriesCollection();
-		dataset.addSeries(series1);
-		dataset.addSeries(series2);
-		
-		return dataset;
-	}
 	
-	public JFreeChart createChart(final XYDataset dataset) {
+	public JFreeChart createChart(XYDataset dataset) {
 		
 		JFreeChart chart = ChartFactory.createXYLineChart(Title, Xlable, Ylable, dataset, PlotOrientation.VERTICAL, true, true, false);
 		
@@ -86,20 +64,27 @@ public class Chart extends JFrame {
 		XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
 		
 		renderer.setSeriesPaint(0, Color.RED);
-		renderer.setSeriesStroke(0, new BasicStroke(2.0f));
+		renderer.setSeriesStroke(0, new BasicStroke(1.0f));
 		renderer.setSeriesPaint(1, Color.BLUE);
-		renderer.setSeriesStroke(1, new BasicStroke(2.0f));
-		
+		renderer.setSeriesStroke(1, new BasicStroke(1.0f));
 		plot.setRenderer(renderer);
-		plot.setBackgroundPaint(Color.white);
+		plot.setBackgroundPaint(color);
 		plot.setRangeGridlinesVisible(false);
 		plot.setDomainGridlinesVisible(false);
+		//chart.setBackgroundPaint(color);
 		
 		chart.getLegend().setFrame(BlockBorder.NONE);
-		
 		chart.setTitle(new TextTitle(Title, new Font("Serif", Font.BOLD, 18)));
 		
 		return chart;
+	}
+	
+	public void setSeries(XYSeries... series) {
+		XYSeriesCollection collection = new XYSeriesCollection();
+		for (XYSeries s : series)
+			collection.addSeries(s);
+		setDataset(collection);
+		
 	}
 	
 	public void setDataset(XYDataset score) {

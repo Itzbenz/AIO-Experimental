@@ -17,7 +17,6 @@ import io.jenetics.engine.EvolutionStatistics;
 import io.jenetics.engine.Limits;
 import io.jenetics.stat.DoubleMomentStatistics;
 import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
 import org.o7.Fire.MachineLearning.Framework.*;
 import org.o7.Fire.MachineLearning.Primtive.NeuralFunction;
 
@@ -30,7 +29,6 @@ import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class ReactorTestJenetic {
@@ -43,7 +41,7 @@ public class ReactorTestJenetic {
 	public File bestJsonModel = new File(this.getClass().getSimpleName() + "-NeuralNetwork-Best.json"), worstJsonModel = new File(this.getClass().getSimpleName() + "-NeuralNetwork-Worst.json"), lastPopulation = new File(this.getClass().getSimpleName() + "-Jenetic-Population.obj");
 	public Gson gson = new GsonBuilder().setPrettyPrinting().create();
 	public int[] structure = new int[]{5, 4, 5, 3, 2};//prob gonna do genetic for this too
-	public float maxRange = 100;
+	public float maxRange = 1;
 	public int knob = RawNeuralNet.needRaw(new Reactor().factor().length, structure);
 	public static Map<Integer, Double> evalCache = Collections.synchronizedMap(new HashMap<>());
 	public final XYSeries evalScore = new XYSeries("Eval Score"), fitnessScore = new XYSeries("Fitness");
@@ -57,9 +55,8 @@ public class ReactorTestJenetic {
 	};
 	public Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() == 1 ? 1 : Runtime.getRuntime().availableProcessors() - 1, Pool.daemonFactory);
 	public long sampleEvery = 100, duration = 10;
-	public ThreadLocal<Timer> timerThreadLocal = ThreadLocal.withInitial(timerSupplier);
+	public ThreadLocal<Timer> timerThreadLocal = ThreadLocal.withInitial(() -> new Atom.Time.Timer(TimeUnit.SECONDS, duration));
 	public Optimize optimize = Optimize.MAXIMUM;
-	public Supplier<Atom.Time.Timer> timerSupplier = () -> new Atom.Time.Timer(TimeUnit.SECONDS, duration);
 	protected Time t = new Time();
 	EvolutionStatistics<Double, DoubleMomentStatistics> stat = EvolutionStatistics.ofNumber();
 	public double top1 = 0;
@@ -72,12 +69,13 @@ public class ReactorTestJenetic {
 	}
 	
 	public String assad = optimize == Optimize.MAXIMUM ? "Fitness" : "Loss";
+	protected long tick = 0;
 	
 	public static double eval(RawBasicNeuralNet raw) {
 		if (evalCache.containsKey(raw.hashCode())) return evalCache.get(raw.hashCode());
 		Reactor reactor = reactorPool.obtain();
 		double reward = 1000f;
-		int iteration = 20;
+		int iteration = 40;
 		for (int j = 0; j < iteration; j++) {
 			double[] output = raw.process(reactor.factor());
 			if (output[0] > 0.5f) reactor.raiseControlRod();
@@ -188,11 +186,8 @@ public class ReactorTestJenetic {
 		System.out.println("Note: " + (optimize == Optimize.MAXIMUM ? "higher" : "lower") + " better");
 		
 		Chart chart = new Chart(assad + " Overtime", "Generation", assad);
-		XYSeriesCollection collection = new XYSeriesCollection(evalScore);
-		collection.addSeries(fitnessScore);
-		chart.setDataset(collection);
-		chart.initUI();
-		chart.setVisible(true);
+		chart.setSeries(evalScore, fitnessScore);
+		chart.spawn();
 		
 		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
 		for (Thread assad : threadSet)

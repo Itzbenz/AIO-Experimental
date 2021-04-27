@@ -1,9 +1,12 @@
-package org.o7.Fire.MachineLearning.Framework;
+package org.o7.Fire.Experimental;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.jfree.data.xy.XYDataItem;
 import org.jfree.data.xy.XYSeriesCollection;
+import org.o7.Fire.MachineLearning.Framework.Chart;
+import org.o7.Fire.MachineLearning.Framework.RawBasicNeuralNet;
+import org.o7.Fire.MachineLearning.Framework.Reactor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
