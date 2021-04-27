@@ -15,6 +15,8 @@ import io.jenetics.util.ISeq;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.o7.Fire.MachineLearning.Framework.Chart;
+import org.o7.Fire.MachineLearning.Framework.RawBasicNeuralNet;
+import org.o7.Fire.MachineLearning.Framework.RawNeuralNet;
 
 import java.io.File;
 import java.io.IOException;

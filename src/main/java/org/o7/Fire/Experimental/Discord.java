@@ -9,7 +9,7 @@ import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.reaction.ReactionEmoji;
-import org.o7.Fire.MachineLearning.Jenetic.RawBasicNeuralNet;
+import org.o7.Fire.MachineLearning.Framework.RawBasicNeuralNet;
 import org.o7.Fire.MachineLearning.Jenetic.ReactorTestJenetic;
 import org.o7.Fire.MachineLearning.Reinforcement.ReactorControl;
 

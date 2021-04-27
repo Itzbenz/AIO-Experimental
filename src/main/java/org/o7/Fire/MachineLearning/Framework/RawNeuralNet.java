@@ -1,4 +1,4 @@
-package org.o7.Fire.MachineLearning.Jenetic;
+package org.o7.Fire.MachineLearning.Framework;
 
 import org.o7.Fire.MachineLearning.Primtive.NeuralFunction;
 

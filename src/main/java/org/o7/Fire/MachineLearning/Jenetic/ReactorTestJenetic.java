@@ -18,9 +18,7 @@ import io.jenetics.engine.Limits;
 import io.jenetics.stat.DoubleMomentStatistics;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.o7.Fire.MachineLearning.Framework.ArrayListCapped;
-import org.o7.Fire.MachineLearning.Framework.Chart;
-import org.o7.Fire.MachineLearning.Framework.Reactor;
+import org.o7.Fire.MachineLearning.Framework.*;
 import org.o7.Fire.MachineLearning.Primtive.NeuralFunction;
 
 import java.io.File;

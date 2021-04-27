@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.jfree.data.xy.XYDataItem;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.o7.Fire.MachineLearning.Jenetic.RawBasicNeuralNet;
 
 import java.io.File;
 import java.io.FileNotFoundException;

@@ -2,6 +2,8 @@ package org.o7.Fire.MachineLearning.Jenetic;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.o7.Fire.MachineLearning.Framework.RawBasicNeuralNet;
+import org.o7.Fire.MachineLearning.Framework.RawNeuralNet;
 
 import java.io.File;
 

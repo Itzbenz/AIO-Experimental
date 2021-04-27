@@ -2,8 +2,8 @@ package org.o7.Fire.MachineLearning.Reinforcement;
 
 import Atom.Utility.Random;
 import Atom.Utility.Utility;
+import org.o7.Fire.MachineLearning.Framework.RawBasicNeuralNet;
 import org.o7.Fire.MachineLearning.Framework.Reactor;
-import org.o7.Fire.MachineLearning.Jenetic.RawBasicNeuralNet;
 
 import java.io.IOException;
 import java.util.function.Consumer;

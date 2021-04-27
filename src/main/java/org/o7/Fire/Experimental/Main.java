@@ -16,8 +16,8 @@ import mindustry.game.Team;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.mod.Mod;
-import org.o7.Fire.MachineLearning.Jenetic.RawBasicNeuralNet;
-import org.o7.Fire.MachineLearning.Jenetic.RawNeuralNet;
+import org.o7.Fire.MachineLearning.Framework.RawBasicNeuralNet;
+import org.o7.Fire.MachineLearning.Framework.RawNeuralNet;
 
 import java.io.File;
 import java.io.IOException;
