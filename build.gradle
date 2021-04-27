@@ -105,6 +105,14 @@ allprojects {
             compileOnly ("com.github.Anuken.Mindustry:core:$mindustryHash"){
                 because("provided")
             }
+            implementation "com.github.o7-Fire.Atomic-Library:Atomic:$atomHash"
+            implementation "com.github.o7-Fire.Atomic-Library:Desktop:$atomHash"
+            compileOnly ("com.github.Anuken.Mindustry:desktop:$mindustryHash")
+            implementation group: 'io.jenetics', name: 'jenetics', version: '6.2.0'
+            compileOnly group: 'org.ejml', name: 'ejml-simple', version: '0.40'
+            compileOnly group: 'com.github.chen0040', name: 'java-reinforcement-learning', version: '1.0.5'
+            implementation group: 'com.discord4j', name: 'discord4j-core', version: '3.2.0-M3'
+            implementation 'org.jfree:jfreechart:1.5.3'
         }
 
     }
@@ -122,13 +130,7 @@ ext{
 }
 //Root Module only
 dependencies {
-    implementation "com.github.o7-Fire.Atomic-Library:Atomic:$atomHash"
-    implementation "com.github.o7-Fire.Atomic-Library:Desktop:$atomHash"
-    compileOnly ("com.github.Anuken.Mindustry:desktop:$mindustryHash")
-    implementation group: 'io.jenetics', name: 'jenetics', version: '6.2.0'
-    compileOnly group: 'org.ejml', name: 'ejml-simple', version: '0.40'
-    compileOnly group: 'com.github.chen0040', name: 'java-reinforcement-learning', version: '1.0.5'
-    compileOnly group: 'com.discord4j', name: 'discord4j-core', version: '3.2.0-M3'
+
 
 
 }

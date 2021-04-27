@@ -33,6 +33,7 @@ public interface RawNeuralNet extends Serializable {
 		return input;
 	}
 	
+	//so slow
 	default double[] subProcess(double[] array, int outputSize, int[] index) {
 		double[] output = new double[outputSize];
 		for (int i = 0; i < outputSize; i++) {//for node

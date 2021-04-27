@@ -1,8 +1,9 @@
 package org.o7.Fire.MachineLearning.Framework;
 
+import Atom.Struct.PoolObject;
 import Atom.Utility.Random;
 
-public class Reactor {
+public class Reactor implements PoolObject.Object {
 	public static int factorPower = 100;
 	protected double heat = 0, powerOutput = 0.1f, control = 0.1f;//range 0 - 1
 	protected double heatGain = 0.3f;
@@ -10,12 +11,21 @@ public class Reactor {
 	protected double totalOutput = 0;
 	protected long interaction = 0, iteration = 0;
 	
-	public void reset() {
+	public void resetRandom() {
 		heat = 0;
 		powerOutput = 0.1f;
 		control = 0;//range 0 - 1
 		heatGain = Random.getDouble();//range 0 - 1
 		heatDissipation = Random.getDouble(0, heatGain - 0.01f);//range 0 - 1
+		totalOutput = 0;
+	}
+	
+	public void reset() {
+		heat = 0;
+		powerOutput = 0.1f;
+		control = 0.1f;//range 0 - 1
+		heatGain = 0.3f;
+		heatDissipation = 0.2f;//environment settings range 0 - 1
 		totalOutput = 0;
 	}
 	

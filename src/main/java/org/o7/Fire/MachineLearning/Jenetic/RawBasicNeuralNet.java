@@ -4,6 +4,8 @@ import io.jenetics.DoubleGene;
 import io.jenetics.Genotype;
 import org.o7.Fire.MachineLearning.Primtive.NeuralFunction;
 
+import java.util.Arrays;
+
 public class RawBasicNeuralNet implements RawNeuralNet {
 	public final double[] raw;
 	public final int[] output;
@@ -49,4 +51,11 @@ public class RawBasicNeuralNet implements RawNeuralNet {
 		return raw[index];
 	}
 	
+	protected int hashCode = 0;
+	
+	@Override
+	public int hashCode() {
+		if (hashCode != 0) return hashCode;
+		return hashCode = Arrays.hashCode(raw);
+	}
 }

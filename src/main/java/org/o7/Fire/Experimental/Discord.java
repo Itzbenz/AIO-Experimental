@@ -10,6 +10,7 @@ import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.reaction.ReactionEmoji;
 import org.o7.Fire.MachineLearning.Jenetic.RawBasicNeuralNet;
+import org.o7.Fire.MachineLearning.Jenetic.ReactorTestJenetic;
 import org.o7.Fire.MachineLearning.Reinforcement.ReactorControl;
 
 import java.io.File;
@@ -24,6 +25,10 @@ public class Discord {
 	static RawBasicNeuralNet neuralNet;
 	
 	static {
+		reloadNet();
+	}
+	
+	public static void reloadNet() {
 		try {
 			neuralNet = gson.fromJson(new FileReader(model), RawBasicNeuralNet.class);
 		}catch (FileNotFoundException e) {
@@ -79,16 +84,28 @@ public class Discord {
 		});
 		gateway.on(MessageCreateEvent.class).subscribe(event -> {
 			final Message message = event.getMessage();
+			if (message.getAuthor().isEmpty()) return;
 			System.out.println(message.getAuthor().get().getTag());
 			System.out.println(message.getContent());
-			if (message.getContent().startsWith("!setup")) {
+			String s = message.getContent();
+			if (s.startsWith("!setup")) {
 				Message channel = message.getChannel().block().createMessage(ReactorControl.welcomes()).block();
-				ReactorControl.log = s -> channel.edit(m -> m.setContent(s)).subscribe();
+				ReactorControl.log = as -> channel.edit(m -> m.setContent(as)).subscribe();
 				messageID = channel.getId();
 				channel.addReaction(upvote).subscribe();
 				channel.addReaction(downvote).subscribe();
 				channel.addReaction(update).block();
 				channel.addReaction(AI).block();
+			}else if (s.startsWith("test")) {
+				message.getChannel().block().createMessage("assad").subscribe();
+			}else if (s.startsWith("!eval")) {
+				message.getChannel().subscribe(m -> m.createMessage("Giving Test Exam To AI").subscribe(am -> am.edit(c -> c.setContent("Fitness: " + ReactorTestJenetic.eval(neuralNet))).subscribe()));
+			}else if (s.startsWith("!reload")) {
+				message.getChannel().subscribe(m -> m.createMessage("Reloading Model").subscribe(am -> am.edit(c -> {
+					reloadNet();
+					c.setContent("Reloaded Network Fitness: " + ReactorTestJenetic.eval(neuralNet));
+				}).subscribe()));
+				
 			}
 			
 			
