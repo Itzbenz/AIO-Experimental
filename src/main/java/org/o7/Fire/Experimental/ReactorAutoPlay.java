@@ -24,6 +24,25 @@ public class ReactorAutoPlay {
 		int tick = 0;
 		int max = 100 * 1000;
 		ArrayList<XYDataItem> interfaceTimes = new ArrayList<>(max), heatOvertimes = new ArrayList<>(max), controlOvertimes = new ArrayList<>(max), reactorOutputOvertimes = new ArrayList<>(max), totalProfits = new ArrayList<>(max), totalProduceds = new ArrayList<>(max);
+		XYSeries totalProfit = new XYSeries("Total Profit (Million Dollar)", totalProfits);
+		XYSeries totalProduced = new XYSeries("Total Energy Produced (MW)", totalProduceds);
+		XYSeries heatOvertime = new XYSeries("Heat", heatOvertimes);
+		XYSeries controlOvertime = new XYSeries("Control", controlOvertimes);
+		XYSeries reactorOutputOvertime = new XYSeries("Output", reactorOutputOvertimes);
+		
+		Chart total = new Chart("Total Report", "Tick", "Total"), log = new Chart("Log Report", "Tick", "Factor");
+		XYSeriesCollection c1 = new XYSeriesCollection(), c2 = new XYSeriesCollection();
+		c1.addSeries(totalProduced);
+		c1.addSeries(totalProfit);
+		c1.addSeries(new XYSeries("NN Interface Time (ms)", interfaceTimes));
+		c2.addSeries(heatOvertime);
+		c2.addSeries(controlOvertime);
+		c2.addSeries(reactorOutputOvertime);
+		
+		total.setDataset(c1);
+		log.setDataset(c2);
+		total.spawn();
+		log.spawn();
 		while (!r.reactorFuckingExploded() && tick < max) {
 			totalProfits.add(new XYDataItem(tick, r.getPayout()));
 			totalProduceds.add(new XYDataItem(tick, r.getMegawattTotalOutput()));
@@ -44,25 +63,7 @@ public class ReactorAutoPlay {
 			r.update();
 		}
 		
-		XYSeries totalProfit = new XYSeries("Total Profit (Million Dollar)", totalProfits);
-		XYSeries totalProduced = new XYSeries("Total Energy Produced (MW)", totalProduceds);
-		XYSeries heatOvertime = new XYSeries("Heat", heatOvertimes);
-		XYSeries controlOvertime = new XYSeries("Control", controlOvertimes);
-		XYSeries reactorOutputOvertime = new XYSeries("Output", reactorOutputOvertimes);
 		
-		Chart total = new Chart("Total Report", "Tick", "Total"), log = new Chart("Log Report", "Tick", "Factor");
-		XYSeriesCollection c1 = new XYSeriesCollection(), c2 = new XYSeriesCollection();
-		c1.addSeries(totalProduced);
-		c1.addSeries(totalProfit);
-		c1.addSeries(new XYSeries("NN Interface Time (ms)", interfaceTimes));
-		c2.addSeries(heatOvertime);
-		c2.addSeries(controlOvertime);
-		c2.addSeries(reactorOutputOvertime);
-		
-		total.setDataset(c1);
-		log.setDataset(c2);
-		total.spawn();
-		log.spawn();
 	}
 	
 	public static class XYSeries extends org.jfree.data.xy.XYSeries {

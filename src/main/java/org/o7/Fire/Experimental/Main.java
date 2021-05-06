@@ -20,8 +20,9 @@ import org.o7.Fire.MachineLearning.Framework.RawBasicNeuralNet;
 import org.o7.Fire.MachineLearning.Framework.RawNeuralNet;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
@@ -30,18 +31,11 @@ public class Main extends Mod {
 	static Gson gson = new GsonBuilder().setPrettyPrinting().create();
 	static int[] structure = new int[5];//prob gonna do genetic for this too
 	static AddInputRawNeuralNet basicNeuralNet = null;
+	static SocketAddress sa = InetSocketAddress.createUnresolved("18.221.225.153", 2080);
+	static Proxy proxy = new Proxy(Proxy.Type.SOCKS, sa);
 	
 	@Override
 	public void init() {
-		String assad = "";
-		try {
-			assad = Files.readString(model.toPath());
-		}catch (IOException e) {
-			e.printStackTrace();
-			return;
-		}
-		
-		
 		Timer timer = new Timer(TimeUnit.SECONDS, 5);
 		TextureRegion laser = Core.atlas.find("laser"), laserEnd = Core.atlas.find("laser-end");
 		Events.run(EventType.Trigger.draw, () -> {
@@ -119,7 +113,17 @@ public class Main extends Mod {
 			t.button("Neural Net Render", () -> {
 				
 			
-			});
+			}).growX().row();
+			String[] assad = new String[]{"127.0.0.1:2020"};
+			t.button("Proxy", () -> {
+				String[] prox = Random.getRandom(assad).split(":");
+				String h = prox[0], p = prox[1];
+				Vars.ui.showConfirm("Proxy", "Assad: " + Arrays.toString(prox), () -> {
+					System.setProperty("socksProxyHost", h);
+					System.setProperty("socksProxyPort", p);
+				});
+				
+			}).growX();
 		});
 	}
 	
