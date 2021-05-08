@@ -24,17 +24,17 @@ public class ReactorAutoPlay {
 		int tick = 0;
 		int max = 100 * 1000;
 		ArrayList<XYDataItem> interfaceTimes = new ArrayList<>(max), heatOvertimes = new ArrayList<>(max), controlOvertimes = new ArrayList<>(max), reactorOutputOvertimes = new ArrayList<>(max), totalProfits = new ArrayList<>(max), totalProduceds = new ArrayList<>(max);
-		XYSeries totalProfit = new XYSeries("Total Profit (Million Dollar)", totalProfits);
-		XYSeries totalProduced = new XYSeries("Total Energy Produced (MW)", totalProduceds);
-		XYSeries heatOvertime = new XYSeries("Heat", heatOvertimes);
-		XYSeries controlOvertime = new XYSeries("Control", controlOvertimes);
-		XYSeries reactorOutputOvertime = new XYSeries("Output", reactorOutputOvertimes);
+		ReactorSeries totalProfit = new ReactorSeries("Total Profit (Million Dollar)", totalProfits);
+		ReactorSeries totalProduced = new ReactorSeries("Total Energy Produced (MW)", totalProduceds);
+		ReactorSeries heatOvertime = new ReactorSeries("Heat", heatOvertimes);
+		ReactorSeries controlOvertime = new ReactorSeries("Control", controlOvertimes);
+		ReactorSeries reactorOutputOvertime = new ReactorSeries("Output", reactorOutputOvertimes);
 		
 		Chart total = new Chart("Total Report", "Tick", "Total"), log = new Chart("Log Report", "Tick", "Factor");
 		XYSeriesCollection c1 = new XYSeriesCollection(), c2 = new XYSeriesCollection();
 		c1.addSeries(totalProduced);
 		c1.addSeries(totalProfit);
-		c1.addSeries(new XYSeries("NN Interface Time (ms)", interfaceTimes));
+		c1.addSeries(new ReactorSeries("NN Interface Time (ms)", interfaceTimes));
 		c2.addSeries(heatOvertime);
 		c2.addSeries(controlOvertime);
 		c2.addSeries(reactorOutputOvertime);
@@ -66,16 +66,16 @@ public class ReactorAutoPlay {
 		
 	}
 	
-	public static class XYSeries extends org.jfree.data.xy.XYSeries {
+	public static class ReactorSeries extends org.jfree.data.xy.XYSeries {
 		
 		
-		public XYSeries(Comparable key, boolean autoSort, boolean allowDuplicateXValues, List<XYDataItem> list) {
+		public ReactorSeries(Comparable key, boolean autoSort, boolean allowDuplicateXValues, List<XYDataItem> list) {
 			super(key, autoSort, allowDuplicateXValues);
 			this.data = list;
 		}
 		
 		
-		public XYSeries(String profit, ArrayList<XYDataItem> items) {
+		public ReactorSeries(String profit, ArrayList<XYDataItem> items) {
 			this(profit, false, true, items);
 		}
 	}
