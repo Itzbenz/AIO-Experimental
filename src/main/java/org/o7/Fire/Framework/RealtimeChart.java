@@ -10,7 +10,7 @@ import java.awt.*;
 
 public class RealtimeChart extends JFrame {
 	public static float multiplierRatio = 1f;
-	public static float ratioW = (1.9f * multiplierRatio), ratioH = (1.6f * multiplierRatio);
+	public static float ratioW = (1.9f * multiplierRatio), ratioH = (2.16f * multiplierRatio);
 	public String XLegend, YLegend;
 	protected XYSeriesCollection collection;
 	JFreeChart jFreeChart;
