@@ -8,7 +8,7 @@ def use = { ... names ->
     }
 }
 
-if(new File(settingsDir, '../Atom').exists()) {
+if(new File(settingsDir, '../Atoms').exists()) {
     use(
             ":Atom",
             ":Atom:Atomic",
