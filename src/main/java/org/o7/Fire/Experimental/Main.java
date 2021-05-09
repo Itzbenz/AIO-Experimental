@@ -2,6 +2,7 @@ package org.o7.Fire.Experimental;
 
 
 import Atom.Time.Timer;
+import Atom.Utility.Pool;
 import Atom.Utility.Random;
 import Ozone.Patch.Mindustry.NetPatched;
 import arc.Core;
@@ -20,6 +21,9 @@ import io.jenetics.IntegerGene;
 import io.jenetics.Optimize;
 import io.jenetics.engine.Engine;
 import io.jenetics.engine.EvolutionResult;
+import io.jenetics.engine.EvolutionStatistics;
+import io.jenetics.engine.Limits;
+import io.jenetics.stat.DoubleMomentStatistics;
 import io.jenetics.util.Factory;
 import mindustry.Vars;
 import mindustry.game.EventType;
@@ -31,6 +35,8 @@ import mindustry.net.Host;
 import mindustry.net.Net;
 import mindustry.net.NetworkIO;
 import mindustry.net.Packets;
+import org.jfree.data.xy.XYSeries;
+import org.o7.Fire.Framework.XYRealtimeChart;
 import org.o7.Fire.MachineLearning.Framework.RawBasicNeuralNet;
 import org.o7.Fire.MachineLearning.Framework.RawNeuralNet;
 
@@ -38,10 +44,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Main extends Mod {
 	static File model = new File("XOR-Jenetic-NeuralNetwork.json"), lastPopulation = new File("XOR-Jenetic-Population.obj");
@@ -51,18 +59,21 @@ public class Main extends Mod {
 	static SocketAddress sa = InetSocketAddress.createUnresolved("18.221.225.153", 2080);
 	static Proxy proxy = new Proxy(Proxy.Type.SOCKS, sa);
 	static Prov<DatagramPacket> packetSupplier = () -> new DatagramPacket(new byte[512], 512);
-	static Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 1000, r -> {
+	static final XYRealtimeChart pingChart = new XYRealtimeChart("Ping Chart", "Iteration", "ms");
+	static final AtomicLong count = new AtomicLong();
+	static Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 100, r -> {
 		Thread t = Executors.defaultThreadFactory().newThread(r);
 		t.setDaemon(true);
 		t.setPriority(1);
 		return t;
 	});
+	static XYSeries series = null;
 	
 	public int ping() throws IOException {
 		DatagramSocket socket = new DatagramSocket();
 		long time = Time.millis();
 		socket.send(new DatagramPacket(new byte[]{-2, 1}, 2, InetAddress.getByName(NetPatched.ip), NetPatched.port));
-		socket.setSoTimeout(5000);
+		socket.setSoTimeout(60000);
 		
 		DatagramPacket packet = packetSupplier.get();
 		socket.receive(packet);
@@ -78,11 +89,11 @@ public class Main extends Mod {
 		TextureRegion laser = Core.atlas.find("laser"), laserEnd = Core.atlas.find("laser-end");
 		// 1.) Define the genotype (factory) suitable
 		//     for the problem.
-		Factory<Genotype<IntegerGene>> gtf = Genotype.of(IntegerChromosome.of(Byte.MIN_VALUE, Byte.MAX_VALUE, 3), IntegerChromosome.of(Byte.MIN_VALUE, Byte.MAX_VALUE, Random.getInt(128)));
+		Factory<Genotype<IntegerGene>> gtf = Genotype.of(IntegerChromosome.of(Byte.MIN_VALUE, Byte.MAX_VALUE, Random.getInt(32, 512)));
 		
 		Vars.net = new NetPatched(Vars.net);
 		// 3.) Create the execution environment.
-		Engine<IntegerGene, Integer> engine = Engine.builder(this::send, gtf).optimize(Optimize.MAXIMUM).executor(executor).build();
+		Engine<IntegerGene, Integer> engine = Engine.builder(this::send, gtf).populationSize(1000).optimize(Optimize.MAXIMUM).executor(executor).build();
 		
 		// 4.) Start the execution (evolution) and
 		//     collect the result.
@@ -158,36 +169,55 @@ public class Main extends Mod {
 			
 			
 		});
+		
 		Vars.ui.settings.game.row().table(t -> {
 			t.button("Neural Net Render", () -> {
 			
 			
 			}).growX().row();
 			t.button("Stress Test", () -> {
-				Genotype<IntegerGene> result = engine.stream().limit(100).collect(EvolutionResult.toBestGenotype());
-				System.out.println(result);
+				Vars.ui.showConfirm("Stress Tester", "Target: " + String.valueOf(NetPatched.ip) + ":" + String.valueOf(NetPatched.port), () -> {
+					if (series != null) pingChart.getCollection().removeSeries(series);
+					series = pingChart.getSeries(NetPatched.ip + ":" + NetPatched.port);
+					series.setMaximumItemCount(500);
+					count.set(0);
+					Core.scene.clear();
+					Pool.daemon(() -> {
+						EvolutionStatistics<Integer, DoubleMomentStatistics> stat = EvolutionStatistics.ofNumber();
+						Genotype<IntegerGene> result = engine.stream().limit(Limits.byExecutionTime(Duration.ofSeconds(30))).peek(stat).collect(EvolutionResult.toBestGenotype());
+						System.out.println(result);
+						System.out.println(stat);
+					}).start();
+				});
+				
+				
 			}).growX().row();
-		});
+		}).growX();
 	}
 	
 	public int send(Genotype<IntegerGene> s) {
 		
 		Packets.InvokePacket packet = Pools.obtain(Packets.InvokePacket.class, Packets.InvokePacket::new);
-		packet.type = s.chromosome().get(0).byteValue();
-		packet.priority = s.chromosome().get(1).byteValue();
-		packet.length = s.chromosome().get(2).byteValue();
-		byte[] bytes = new byte[s.get(1).length()];
-		for (int i = 0; i < s.get(1).length(); i++) {
-			bytes[i] = s.get(1).get(i).byteValue();
+		packet.type = 72;
+		packet.priority = 0;
+		
+		byte[] bytes = new byte[s.chromosome().length()];
+		for (int i = 0; i < s.chromosome().length(); i++) {
+			bytes[i] = s.chromosome().get(i).byteValue();
 		}
+		packet.length = bytes.length;
 		packet.bytes = bytes;
+		int i = 0;
 		try {
-			Vars.net.send(packet, Random.getBool() ? Net.SendMode.tcp : Net.SendMode.udp);
-			return ping();
+			Vars.net.send(packet, Net.SendMode.udp);
+			i = ping();
 		}catch (IOException e) {
 			e.printStackTrace();
-			return 0;
+			i = 0;
 		}
+		
+		series.add(count.getAndAdd(1), i);
+		return i;
 		
 	}
 	

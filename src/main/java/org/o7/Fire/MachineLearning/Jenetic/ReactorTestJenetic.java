@@ -44,6 +44,7 @@ public class ReactorTestJenetic {
 	public Gson gson = new GsonBuilder().setPrettyPrinting().create();
 	static XYRealtimeChart neuralChart = new XYRealtimeChart("Neural Network", "Iteration", "Value");
 	public float maxRange = 1;
+	public int[] structure = new int[]{5, 10, 3, 2};//prob gonna do genetic for this too
 	public int knob = RawNeuralNet.needRaw(new Reactor().factor().length, structure);
 	public static Map<Integer, Double> evalCache = Collections.synchronizedMap(new HashMap<>());
 	static XYSeries control = neuralChart.getSeries("Control"), heat = neuralChart.getSeries("Heat"), output1 = neuralChart.getSeries("Output 1"), output2 = neuralChart.getSeries("Output 2");
@@ -72,7 +73,7 @@ public class ReactorTestJenetic {
 		neuralChart.setVisible(true);
 	}
 	
-	public int[] structure = new int[]{5, 10, 3, 2};//prob gonna do genetic for this too
+	
 	public final PoolObject<RawBasicNeuralNet> neuralPool = new PoolObject<RawBasicNeuralNet>() {
 		@Override
 		protected RawBasicNeuralNet newObject() {
