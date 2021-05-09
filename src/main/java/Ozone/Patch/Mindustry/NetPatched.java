@@ -13,41 +13,50 @@ import org.jfree.data.xy.XYSeries;
 import org.o7.Fire.Experimental.Main;
 import org.o7.Fire.Framework.XYRealtimeChart;
 
-import java.io.IOException;
-
 public class NetPatched extends LoggableNet {
-	static final XYRealtimeChart pingChart = new XYRealtimeChart("Ping Chart", "Iteration", "ms");
+	static final XYRealtimeChart pingChart = new XYRealtimeChart("Ping Chart", "Time (ms)", "ms");
 	public static volatile String ip;
 	public static volatile int port;
-	static long l = 0;
-	static XYSeries series = null;
+	static long l = 0, last = System.currentTimeMillis();
+	static XYSeries pingClientChart = null, pingSeries = null;
+	static int factorSleep = 2;
+	static int sleep = 16 * factorSleep;
+	static int max = (50 / factorSleep) * 30;
 	
 	static {
 		pingChart.setVisible(true);
 		Pool.daemon(() -> {
 			while (true) {
 				try {
-					if (ip == null) return;
+					UnThread.sleep(sleep);
+					if (ip == null) continue;
+					if (!Vars.net.client()) continue;
 					String current = ip + ":" + port;
-					if (series == null) {
-						series = pingChart.getSeries(current);
-						series.setMaximumItemCount(500);
+					if (pingClientChart == null) {
+						pingClientChart = pingChart.getSeries(current);
+						pingClientChart.setMaximumItemCount(max);
+						pingSeries = pingChart.getSeries(current + " Socket Ping");
+						pingSeries.setMaximumItemCount(max);
+						last = System.currentTimeMillis();
 					}
-					if (!series.getKey().equals(current)) {
-						pingChart.getCollection().removeSeries(series);
-						series = null;
+					if (!pingClientChart.getKey().equals(current)) {
+						pingChart.getCollection().removeSeries(pingClientChart);
+						pingChart.getCollection().removeSeries(pingSeries);
+						pingClientChart = null;
+						pingSeries = null;
 						l = 0;
-						return;
+						continue;
 					}
-					int i = 0;
+					int i;
 					try {
 						i = Main.ping();
-					}catch (IOException e) {
+					}catch (Exception e) {
 						i = 0;
 					}
-					series.add(l++, i);
+					pingSeries.add(System.currentTimeMillis() - last, i);
+					pingClientChart.add(System.currentTimeMillis() - last, Vars.netClient.getPing());
 					pingChart.repaint();
-					UnThread.sleep(16 * 2);
+					
 				}catch (Exception e) {
 					e.printStackTrace();
 				}

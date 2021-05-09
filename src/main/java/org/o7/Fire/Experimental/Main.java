@@ -10,6 +10,7 @@ import arc.Events;
 import arc.func.Prov;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
+import arc.util.Log;
 import arc.util.Time;
 import arc.util.pooling.Pools;
 import com.google.gson.Gson;
@@ -19,12 +20,12 @@ import io.jenetics.IntegerChromosome;
 import io.jenetics.IntegerGene;
 import io.jenetics.Optimize;
 import io.jenetics.engine.Engine;
-import io.jenetics.engine.EvolutionResult;
 import io.jenetics.engine.Limits;
 import io.jenetics.util.Factory;
 import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.game.Team;
+import mindustry.gen.Call;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.mod.Mod;
@@ -43,6 +44,7 @@ import java.time.Duration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Main extends Mod {
 	static File model = new File("XOR-Jenetic-NeuralNetwork.json"), lastPopulation = new File("XOR-Jenetic-Population.obj");
@@ -160,20 +162,32 @@ public class Main extends Mod {
 			
 			
 		});
-		
+		final int[] fitness = {0};
+		AtomicReference<Genotype<IntegerGene>> best = new AtomicReference<>();
 		Vars.ui.settings.game.row().table(t -> {
 			t.button("Neural Net Render", () -> {
 			
 			
 			}).growX().row();
 			t.button("Stress Test", () -> {
-				Vars.ui.showConfirm("Stress Tester", "Target: " + String.valueOf(NetPatched.ip) + ":" + String.valueOf(NetPatched.port), () -> {
+				Vars.ui.showConfirm("Stress Tester", "Target: " + NetPatched.ip + ":" + NetPatched.port + "\n duration: 30 Second", () -> {
 					
 					Vars.ui.settings.hide();
+					
 					Pool.daemon(() -> {
 						
-						Genotype<IntegerGene> result = engine.stream().limit(Limits.byExecutionTime(Duration.ofSeconds(30))).collect(EvolutionResult.toBestGenotype());
-						System.out.println(result);
+						long l = engine.stream().limit(Limits.byExecutionTime(Duration.ofSeconds(30))).peek(s -> {
+							if (s.bestPhenotype().fitness() > fitness[0]) {
+								fitness[0] = s.bestPhenotype().fitness();
+								best.set(s.bestPhenotype().genotype());
+							}
+						}).count();
+						Vars.ui.showInfo("Sent " + l + " udp packets");
+						Vars.ui.showInfoText("Best Array", "Fitness: " + fitness[0] + "\n\n" + best.get().chromosome() + "\n Copied to your clipboard");
+						String tes = best.get().chromosome() + " Fitness:" + fitness[0];
+						Core.app.setClipboardText(tes);
+						Log.info(tes);
+						Call.sendChatMessage("/sync");
 					}).start();
 				});
 				
