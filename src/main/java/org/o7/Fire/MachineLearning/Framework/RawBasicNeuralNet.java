@@ -10,16 +10,20 @@ public class RawBasicNeuralNet implements RawNeuralNet {
 	public double[] raw;
 	public int[] output;
 	
+	protected NeuralFunction function = NeuralFunction.Identity;
+	
 	public RawBasicNeuralNet(Genotype<DoubleGene> raw, int[] output) {
+		assignRaw(raw);
+		this.output = output;
+	}
+	
+	public void assignRaw(Genotype<DoubleGene> raw) {
 		double[] gen = new double[raw.chromosome().length()];
 		for (int i = 0; i < gen.length; i++) {
 			gen[i] = raw.chromosome().get(i).doubleValue();
 		}
 		this.raw = gen;
-		this.output = output;
 	}
-	
-	protected NeuralFunction function = NeuralFunction.Identity;
 	
 	public RawBasicNeuralNet(double[] raw, int[] structure) {
 		this.raw = raw;

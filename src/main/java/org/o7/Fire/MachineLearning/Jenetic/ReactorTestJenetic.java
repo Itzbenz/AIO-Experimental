@@ -1,23 +1,22 @@
 package org.o7.Fire.MachineLearning.Jenetic;
 
-import Atom.File.SerializeData;
 import Atom.Struct.PoolObject;
 import Atom.Time.Time;
 import Atom.Time.Timer;
 import Atom.Utility.Pool;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.jenetics.DoubleChromosome;
-import io.jenetics.DoubleGene;
-import io.jenetics.Genotype;
-import io.jenetics.Optimize;
+import io.jenetics.*;
 import io.jenetics.engine.Engine;
 import io.jenetics.engine.EvolutionResult;
 import io.jenetics.engine.EvolutionStatistics;
 import io.jenetics.engine.Limits;
 import io.jenetics.stat.DoubleMomentStatistics;
 import org.jfree.data.xy.XYSeries;
-import org.o7.Fire.MachineLearning.Framework.*;
+import org.o7.Fire.Framework.XYRealtimeChart;
+import org.o7.Fire.MachineLearning.Framework.RawBasicNeuralNet;
+import org.o7.Fire.MachineLearning.Framework.RawNeuralNet;
+import org.o7.Fire.MachineLearning.Framework.Reactor;
 import org.o7.Fire.MachineLearning.Primtive.NeuralFunction;
 
 import java.io.File;
@@ -25,11 +24,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class ReactorTestJenetic {
 	public static final PoolObject<Reactor> reactorPool = new PoolObject<Reactor>() {
@@ -38,14 +39,14 @@ public class ReactorTestJenetic {
 			return new Reactor();
 		}
 	};
+	
 	public File bestJsonModel = new File(this.getClass().getSimpleName() + "-NeuralNetwork-Best.json"), worstJsonModel = new File(this.getClass().getSimpleName() + "-NeuralNetwork-Worst.json"), lastPopulation = new File(this.getClass().getSimpleName() + "-Jenetic-Population.obj");
 	public Gson gson = new GsonBuilder().setPrettyPrinting().create();
-	public int[] structure = new int[]{5, 4, 5, 3, 2};//prob gonna do genetic for this too
+	static XYRealtimeChart neuralChart = new XYRealtimeChart("Neural Network", "Iteration", "Value");
 	public float maxRange = 1;
 	public int knob = RawNeuralNet.needRaw(new Reactor().factor().length, structure);
 	public static Map<Integer, Double> evalCache = Collections.synchronizedMap(new HashMap<>());
-	public final XYSeries evalScore = new XYSeries("Eval Score"), fitnessScore = new XYSeries("Fitness");
-	public List<EvolutionResult<DoubleGene, Double>> list;
+	static XYSeries control = neuralChart.getSeries("Control"), heat = neuralChart.getSeries("Heat"), output1 = neuralChart.getSeries("Output 1"), output2 = neuralChart.getSeries("Output 2");
 	public Engine<DoubleGene, Double> engine;
 	public final PoolObject<Genotype<DoubleGene>> genePool = new PoolObject<>() {
 		@Override
@@ -60,30 +61,67 @@ public class ReactorTestJenetic {
 	protected Time t = new Time();
 	EvolutionStatistics<Double, DoubleMomentStatistics> stat = EvolutionStatistics.ofNumber();
 	public double top1 = 0;
+	static long universalIteration = 0;
+	
+	static {
+		int count = 40;
+		control.setMaximumItemCount(count);
+		heat.setMaximumItemCount(count);
+		output1.setMaximumItemCount(count);
+		output2.setMaximumItemCount(count);
+		neuralChart.setVisible(true);
+	}
+	
+	public int[] structure = new int[]{5, 10, 3, 2};//prob gonna do genetic for this too
+	public final PoolObject<RawBasicNeuralNet> neuralPool = new PoolObject<RawBasicNeuralNet>() {
+		@Override
+		protected RawBasicNeuralNet newObject() {
+			return new RawBasicNeuralNet(new double[knob], structure).setFunction(NeuralFunction.Relu);
+		}
+	};
+	public String assad = optimize == Optimize.MAXIMUM ? "Fitness" : "Loss";
+	XYRealtimeChart chart = new XYRealtimeChart("Reactor Jenetic", "Generation", assad);
+	XYSeries bestEval = chart.getSeries("Best Eval"), worstEval = chart.getSeries("Worst Eval"), eval = chart.getSeries("Eval");
+	Genotype<DoubleGene> best = null, worst = null;
+	
+	{
+		int count = 100;
+		bestEval.setMaximumItemCount(count);
+		worstEval.setMaximumItemCount(count);
+		eval.setMaximumItemCount(count);
+		chart.setVisible(true);
+	}
 	
 	public static void main(String[] args) throws IOException {
 		ReactorTestJenetic jenetic = new ReactorTestJenetic();
-		jenetic.prepare(10, 1000);
+		jenetic.prepare(1000);
 		jenetic.execute();
 		jenetic.post();
 	}
 	
-	public String assad = optimize == Optimize.MAXIMUM ? "Fitness" : "Loss";
-	protected long tick = 0;
-	
 	public static double eval(RawBasicNeuralNet raw) {
-		if (evalCache.containsKey(raw.hashCode())) return evalCache.get(raw.hashCode());
+		//if (evalCache.containsKey(raw.hashCode())) return evalCache.get(raw.hashCode());
 		Reactor reactor = reactorPool.obtain();
-		double reward = 1000f;
+		double reward;
 		int iteration = 40;
 		for (int j = 0; j < iteration; j++) {
 			double[] output = raw.process(reactor.factor());
-			if (output[0] > 0.5f) reactor.raiseControlRod();
-			if (output[1] > 0.5f) reactor.lowerControlRod();
+			if (output[0] > 0.4f) reactor.raiseControlRod();
+			if (output[1] > 0.4f) reactor.lowerControlRod();
+			//reactor.setControl(reactor.getControl()+output[0]);
+			//reactor.setControl(reactor.getControl()-output[1]);
 			reactor.update();
+			if (universalIteration % 80 < iteration) {
+				heat.add(universalIteration, reactor.getHeat());
+				control.add(universalIteration, reactor.getControl());
+				output1.add(universalIteration, output[0]);
+				output2.add(universalIteration, output[1]);
+				neuralChart.repaint();
+				universalIteration++;
+			}
 			if (reactor.reactorFuckingExploded()) break;
 		}
-		reward = Math.min(reward, reactor.getPayout());
+		reward = reactor.reactorFuckingExploded() ? reactor.getIteration() - iteration : reactor.totalPower();
 		/*
 		int batch = batch = 10;
 		double increment = (double) 1 / iteration;
@@ -111,55 +149,68 @@ public class ReactorTestJenetic {
 		
 		 */
 		reactorPool.free(reactor);
-		evalCache.put(raw.hashCode(), reward);
+		//evalCache.put(raw.hashCode(), reward);
+		
 		return reward;
 	}
 	
 	public double eval(double[] arr) {
-		return eval(new RawBasicNeuralNet(arr, structure));
+		RawBasicNeuralNet net = neuralPool.obtain();
+		net.raw = arr;
+		double d = eval(net);
+		neuralPool.free(net);
+		return d;
 	}
 	
-	public void prepare(int maxCollectedPopulation, int populationSize) {
+	public void prepare(int populationSize) {
 		System.out.println("Preparing Engine");
-		System.out.println("Max collected population: " + maxCollectedPopulation);
 		System.out.println("Population Size: " + populationSize);
-		list = Collections.synchronizedList(new ArrayListCapped<>(maxCollectedPopulation) {
-			@Override
-			public void trim() {
-				super.trim();
-			}
-		});
+		System.out.println("Knob : " + knob);
+		System.out.println("Range Knob: " + maxRange + " - " + -maxRange);
 		engine = Engine.builder(this::eval, genePool::obtain)//
 				.populationSize(populationSize)//mfw
 				.optimize(optimize)//higher better or lower better
-				//.alterers(new Mutator<>(0.63), new MeanAlterer<>(0.6))//assad
+				.alterers(new Mutator<>(0.8), new MeanAlterer<>(0.6))//assad
 				.executor(executor)//should use gpu
 				.build();
 		
 	}
-	
+
 	public void execute() {
 		t = new Time(TimeUnit.MILLISECONDS);
 		//RandomRegistry.with(new Random(123), r ->
-		engine.stream()
+		long count = engine.stream()
 				//.limit(Limits.bySteadyFitness(14))
-				.limit(this::steadyFitness)//assad
+				//.limit(this::steadyFitness)//assad
 				//.limit(Limits.bySteadyFitness(100))//assad
-				.limit(Limits.byExecutionTime(Duration.ofSeconds(duration * 2)))//assad
-				.filter(this::theBest)//
+				.limit(Limits.byExecutionTime(Duration.ofSeconds(120)))//assad
+				//.filter(this::theBest)//
 				//.filter(XORTestJenetic::evolutionNews)
-				.peek(stat)//assad
-				.collect(Collectors.toCollection(() -> list));//assad
+				//.peek(stat)//assad
+				.peek(assad -> {//collector
+					if (best == null) best = assad.bestPhenotype().genotype();
+					if (worst == null) worst = assad.worstPhenotype().genotype();
+					double bestScore = eval(assad.bestPhenotype().genotype()), worstScore = eval(assad.worstPhenotype().genotype());
+					double topBestScore = eval(best), topWorstScore = eval(worst);
+					if (optimize.compare(topBestScore, bestScore) == -1) best = assad.bestPhenotype().genotype();
+					if (optimize.compare(topWorstScore, worstScore) == 1) worst = assad.worstPhenotype().genotype();
+					bestEval.add(assad.generation(), Optimize.MAXIMUM == optimize ? Math.max(topBestScore, bestScore) : Math.min(topBestScore, bestScore));
+					worstEval.add(assad.generation(), Optimize.MAXIMUM == optimize ? Math.min(topWorstScore, worstScore) : Math.max(topWorstScore, worstScore));
+					eval.add(assad.generation(), (bestScore + worstScore) / 2F);
+					try {
+						chart.repaint();
+					}catch (Exception ignored) {}
+					;
+				}).count();
 		//)
 		//wtf
+		System.out.println("Total Population: " + count);
 	}
 	
 	public void post() throws IOException {
 		System.out.println();
-		EvolutionResult<DoubleGene, Double> pop0 = list.get(0), pop100 = list.get(list.size() - 1);
-		EvolutionResult<DoubleGene, Double> best = (optimize == Optimize.MAXIMUM ? pop100 : pop0);
-		EvolutionResult<DoubleGene, Double> worst = (optimize == Optimize.MAXIMUM ? pop0 : pop100);
-		RawBasicNeuralNet bestNet = new RawBasicNeuralNet(best.bestPhenotype().genotype(), structure), worstNet = new RawBasicNeuralNet(worst.bestPhenotype().genotype(), structure);
+		
+		RawBasicNeuralNet bestNet = new RawBasicNeuralNet(best, structure), worstNet = new RawBasicNeuralNet(worst, structure);
 		/*
 		System.out.println("Best fitness: " + best.bestPhenotype().fitness());
 		System.out.println("Worst fitness: " + worst.bestPhenotype().fitness());
@@ -178,17 +229,11 @@ public class ReactorTestJenetic {
 		lastPopulation.delete();
 		Files.writeString(bestJsonModel.toPath(), gson.toJson(bestNet), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 		Files.writeString(worstJsonModel.toPath(), gson.toJson(worstNet), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-		SerializeData.dataOut(best.population(), lastPopulation);
 		System.out.println("Note: " + (optimize == Optimize.MAXIMUM ? "higher" : "lower") + " better");
 		System.out.println();
 		System.out.println("Stat for nerd:");
 		System.out.println(stat);
 		System.out.println("Note: " + (optimize == Optimize.MAXIMUM ? "higher" : "lower") + " better");
-		
-		Chart chart = new Chart(assad + " Overtime", "Generation", assad);
-		chart.setSeries(evalScore, fitnessScore);
-		chart.spawn();
-		
 		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
 		for (Thread assad : threadSet)
 			if (!assad.isDaemon())
@@ -207,8 +252,6 @@ public class ReactorTestJenetic {
 	
 	public boolean theBest(EvolutionResult<DoubleGene, Double> evolutionResult) {
 		double eval = eval(evolutionResult.bestPhenotype().genotype());
-		fitnessScore.add(evolutionResult.generation(), evolutionResult.bestPhenotype().fitness());
-		evalScore.add(evolutionResult.generation(), eval);
 		boolean sample = (evolutionResult.generation() / sampleEvery) == sampleEvery;
 		boolean best = optimize.compare(top1, eval) == -1 || top1 == 0;
 		if (best || sample) {
@@ -230,8 +273,10 @@ public class ReactorTestJenetic {
 	}
 
 	public double eval(Genotype<DoubleGene> genotype) {
-		RawBasicNeuralNet net = new RawBasicNeuralNet(genotype, structure).setFunction(NeuralFunction.Tanh);
-		assert net.size() == knob : "Net size is: " + net.size();
-		return eval(net);
+		RawBasicNeuralNet net = neuralPool.obtain();
+		net.assignRaw(genotype);
+		double d = eval(net);
+		neuralPool.free(net);
+		return d;
 	}
 }

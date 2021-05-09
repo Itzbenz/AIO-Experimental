@@ -19,6 +19,18 @@ public class Start {
 		bootstrap.loadMain("org.o7.Fire.Experimental.MindustryMain", args);
 	}
 	
+	public static class StressTester {
+		public static void main(String[] args) throws Throwable {
+			AtomicBootstrap bootstrap = new AtomicBootstrap();
+			File mindustry = new File(new File(FileUtility.getAppdata(), "Mindustry"), "build/cache/Anuken/Mindustry/releases/download/v126.2/Mindustry.jar");
+			if (!mindustry.exists()) throw new FileNotFoundException(mindustry.getAbsolutePath());
+			bootstrap.loadCurrentClasspath();
+			bootstrap.loadClasspath();
+			bootstrap.getLoader().addURL(mindustry);
+			bootstrap.loadMain("org.o7.Fire.Experimental.Bruteforce", args);
+		}
+	}
+	
 	public static class Server {
 		public static void main(String[] args) {
 			try {

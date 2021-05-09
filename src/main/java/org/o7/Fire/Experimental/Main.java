@@ -3,27 +3,44 @@ package org.o7.Fire.Experimental;
 
 import Atom.Time.Timer;
 import Atom.Utility.Random;
+import Ozone.Patch.Mindustry.NetPatched;
 import arc.Core;
 import arc.Events;
+import arc.func.Prov;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.util.Log;
+import arc.util.Time;
+import arc.util.pooling.Pools;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.jenetics.Genotype;
+import io.jenetics.IntegerChromosome;
+import io.jenetics.IntegerGene;
+import io.jenetics.Optimize;
+import io.jenetics.engine.Engine;
+import io.jenetics.engine.EvolutionResult;
+import io.jenetics.util.Factory;
 import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.mod.Mod;
+import mindustry.net.Host;
+import mindustry.net.Net;
+import mindustry.net.NetworkIO;
+import mindustry.net.Packets;
 import org.o7.Fire.MachineLearning.Framework.RawBasicNeuralNet;
 import org.o7.Fire.MachineLearning.Framework.RawNeuralNet;
 
 import java.io.File;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.SocketAddress;
+import java.io.IOException;
+import java.net.*;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class Main extends Mod {
@@ -33,11 +50,43 @@ public class Main extends Mod {
 	static AddInputRawNeuralNet basicNeuralNet = null;
 	static SocketAddress sa = InetSocketAddress.createUnresolved("18.221.225.153", 2080);
 	static Proxy proxy = new Proxy(Proxy.Type.SOCKS, sa);
+	static Prov<DatagramPacket> packetSupplier = () -> new DatagramPacket(new byte[512], 512);
+	static Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 1000, r -> {
+		Thread t = Executors.defaultThreadFactory().newThread(r);
+		t.setDaemon(true);
+		t.setPriority(1);
+		return t;
+	});
+	
+	public int ping() throws IOException {
+		DatagramSocket socket = new DatagramSocket();
+		long time = Time.millis();
+		socket.send(new DatagramPacket(new byte[]{-2, 1}, 2, InetAddress.getByName(NetPatched.ip), NetPatched.port));
+		socket.setSoTimeout(5000);
+		
+		DatagramPacket packet = packetSupplier.get();
+		socket.receive(packet);
+		
+		ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
+		Host host = NetworkIO.readServerData((int) Time.timeSinceMillis(time), packet.getAddress().getHostAddress(), buffer);
+		return host.ping;
+	}
 	
 	@Override
 	public void init() {
 		Timer timer = new Timer(TimeUnit.SECONDS, 5);
 		TextureRegion laser = Core.atlas.find("laser"), laserEnd = Core.atlas.find("laser-end");
+		// 1.) Define the genotype (factory) suitable
+		//     for the problem.
+		Factory<Genotype<IntegerGene>> gtf = Genotype.of(IntegerChromosome.of(Byte.MIN_VALUE, Byte.MAX_VALUE, 3), IntegerChromosome.of(Byte.MIN_VALUE, Byte.MAX_VALUE, Random.getInt(128)));
+		
+		Vars.net = new NetPatched(Vars.net);
+		// 3.) Create the execution environment.
+		Engine<IntegerGene, Integer> engine = Engine.builder(this::send, gtf).optimize(Optimize.MAXIMUM).executor(executor).build();
+		
+		// 4.) Start the execution (evolution) and
+		//     collect the result.
+		
 		Events.run(EventType.Trigger.draw, () -> {
 			Draw.draw(Layer.overlayUI, () -> {
 				if (timer.get() || basicNeuralNet == null) {
@@ -111,20 +160,35 @@ public class Main extends Mod {
 		});
 		Vars.ui.settings.game.row().table(t -> {
 			t.button("Neural Net Render", () -> {
-				
+			
 			
 			}).growX().row();
-			String[] assad = new String[]{"127.0.0.1:2020"};
-			t.button("Proxy", () -> {
-				String[] prox = Random.getRandom(assad).split(":");
-				String h = prox[0], p = prox[1];
-				Vars.ui.showConfirm("Proxy", "Assad: " + Arrays.toString(prox), () -> {
-					System.setProperty("socksProxyHost", h);
-					System.setProperty("socksProxyPort", p);
-				});
-				
-			}).growX();
+			t.button("Stress Test", () -> {
+				Genotype<IntegerGene> result = engine.stream().limit(100).collect(EvolutionResult.toBestGenotype());
+				System.out.println(result);
+			}).growX().row();
 		});
+	}
+	
+	public int send(Genotype<IntegerGene> s) {
+		
+		Packets.InvokePacket packet = Pools.obtain(Packets.InvokePacket.class, Packets.InvokePacket::new);
+		packet.type = s.chromosome().get(0).byteValue();
+		packet.priority = s.chromosome().get(1).byteValue();
+		packet.length = s.chromosome().get(2).byteValue();
+		byte[] bytes = new byte[s.get(1).length()];
+		for (int i = 0; i < s.get(1).length(); i++) {
+			bytes[i] = s.get(1).get(i).byteValue();
+		}
+		packet.bytes = bytes;
+		try {
+			Vars.net.send(packet, Random.getBool() ? Net.SendMode.tcp : Net.SendMode.udp);
+			return ping();
+		}catch (IOException e) {
+			e.printStackTrace();
+			return 0;
+		}
+		
 	}
 	
 	public static class AddInputRawNeuralNet implements RawNeuralNet {

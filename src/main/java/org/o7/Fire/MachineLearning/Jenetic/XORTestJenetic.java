@@ -1,19 +1,19 @@
 package org.o7.Fire.MachineLearning.Jenetic;
 
-import Atom.File.SerializeData;
 import Atom.Time.Time;
 import Atom.Time.Timer;
 import Atom.Utility.Pool;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.jenetics.*;
+import io.jenetics.DoubleGene;
+import io.jenetics.Genotype;
+import io.jenetics.Optimize;
+import io.jenetics.Phenotype;
 import io.jenetics.engine.*;
 import io.jenetics.stat.DoubleMomentStatistics;
 import io.jenetics.util.DoubleRange;
-import io.jenetics.util.Factory;
-import io.jenetics.util.ISeq;
 import org.jfree.data.xy.XYSeries;
-import org.o7.Fire.MachineLearning.Framework.Chart;
+import org.o7.Fire.Framework.XYRealtimeChart;
 import org.o7.Fire.MachineLearning.Framework.RawBasicNeuralNet;
 import org.o7.Fire.MachineLearning.Framework.RawNeuralNet;
 
@@ -22,12 +22,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class XORTestJenetic {
 	static File model = new File("XOR-Jenetic-NeuralNetwork.json"), lastPopulation = new File("XOR-Jenetic-Population.obj");
@@ -39,9 +39,12 @@ public class XORTestJenetic {
 	static int maxRange = 100;
 	static Phenotype<DoubleGene, Double> beest = null;
 	static long sampleEvery = 100;
-	static int maxCollectedPopulation = 100;
-	static Supplier<Timer> timerSupplier = () -> new Timer(TimeUnit.SECONDS, 10);
+	static Supplier<Timer> timerSupplier = () -> new Timer(TimeUnit.SECONDS, 20);
 	static ThreadLocal<Timer> timerThreadLocal = ThreadLocal.withInitial(timerSupplier);
+	static XYRealtimeChart chart = new XYRealtimeChart("XOR Jenetic", "Generation", "Loss");
+	
+	static XYSeries bestEval = chart.getSeries("Best Eval"), worstEval = chart.getSeries("Worst Eval"), eval = chart.getSeries("Eval");
+	static Genotype<DoubleGene> best = null, worst = null;
 	
 	public static double eval(RawBasicNeuralNet net) {
 		double dd = 0;
@@ -56,10 +59,13 @@ public class XORTestJenetic {
 		return eval(net);
 	}
 	
-	//public static Map<Long, Double> generationScore = Collections.synchronizedMap(new HashMap<>());
-	public static volatile XYSeries score = new XYSeries("Fitness");
-	
-	public static final XYSeries evalScore = new XYSeries("Eval Score"), fitnessScore = new XYSeries("Fitness");
+	static {
+		int count = 100;
+		bestEval.setMaximumItemCount(count);
+		worstEval.setMaximumItemCount(count);
+		eval.setMaximumItemCount(count);
+		chart.setVisible(true);
+	}
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
 		
@@ -68,74 +74,51 @@ public class XORTestJenetic {
 		// 1.) Define the genotype (factory) suitable
 		//     for the problem.
 		
-		Genotype<DoubleGene> best = null, worst = null;
-		ISeq<Phenotype<DoubleGene, Double>> lastPop = null;
-		if (lastPopulation.exists()) {
-			System.out.println("Loading last population: " + lastPopulation.getAbsolutePath());
-			lastPop = SerializeData.dataIn(lastPopulation);
-			
-		}
+		
 		Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2, Pool.daemonFactory);
 		
-		
-		Factory<Genotype<DoubleGene>> gtf = Genotype.of(DoubleChromosome.of(-maxRange, maxRange, knob));
 		// Codecs.ofVector(DoubleRange.of(-maxRange,maxRange), knob);
 		EvolutionStatistics<Double, DoubleMomentStatistics> stat = EvolutionStatistics.ofNumber();
 		// 3.) Create the execution environment.
+		Optimize optimize = Optimize.MINIMUM;
 		Engine<DoubleGene, Double> engine = Engine.builder(XORTestJenetic::eval, Codecs.ofVector(DoubleRange.of(-maxRange, maxRange), knob))//
 				.populationSize(500)//
-				.optimize(Optimize.MINIMUM)//because lower is better
-				.alterers(new Mutator<>(0.03), new MeanAlterer<>(0.6))//assad
-				.executor(executor).build();
-		System.out.println("1. Making random population");
-		System.out.println("2. Test population");
-		System.out.println("3. Euthanasie/Modify unfit population");
-		System.out.println("4. Back to 1");
+				.optimize(optimize)//because lower is better
+				//.alterers(new Mutator<>(0.8), new MeanAlterer<>(0.9))//assad
+				.maximalPhenotypeAge(100).executor(executor).build();
 		// 4.) Start the execution (evolution) and
 		//     collect the result.
 		Time t = new Time(TimeUnit.MILLISECONDS);
-		
-		List<EvolutionResult<DoubleGene, Double>> list = Collections.synchronizedList(new ArrayList<>() {
-			@Override
-			public boolean add(EvolutionResult<DoubleGene, Double> evolutionResult) {
-				boolean b = super.add(evolutionResult);
-				trim();
-				return b;
-			}
-			
-			private void trim() {
-				if (size() > maxCollectedPopulation) {
-					sort(Comparator.comparing(o -> o.bestPhenotype().fitness()));
-					subList(50, size() - 1).clear();
-				}
-			}
-			
-			@Override
-			public boolean addAll(Collection<? extends EvolutionResult<DoubleGene, Double>> c) {
-				boolean b = super.addAll(c);
-				trim();
-				return b;
-			}
-		});
-
 		//RandomRegistry.with(new Random(123), r ->
-		engine.stream().limit(Limits.bySteadyFitness(50))
-				.limit(XORTestJenetic::timeOut)//assad
-				.limit(Limits.byExecutionTime(Duration.ofSeconds(60)))
+		long count = engine.stream()
+				//.limit(XORTestJenetic::timeOut)//assad
+				.limit(Limits.byExecutionTime(Duration.ofSeconds(60)))//play time
 				//.filter(XORTestJenetic::evolutionNews)
-				.peek(stat).sorted(Comparator.comparing(o -> o.bestPhenotype().fitness())).collect(Collectors.toCollection(() -> list));//assad
+				.peek(stat)//end of scenario result
+				.peek(assad -> {//collector
+					if (best == null) best = assad.bestPhenotype().genotype();
+					if (worst == null) worst = assad.worstPhenotype().genotype();
+					double bestScore = eval(assad.bestPhenotype().genotype()), worstScore = eval(assad.worstPhenotype().genotype());
+					if (optimize.compare(eval(best), bestScore) == -1) best = assad.bestPhenotype().genotype();
+					if (optimize.compare(eval(worst), worstScore) == 1) worst = assad.worstPhenotype().genotype();
+					bestEval.add(assad.generation(), eval(best));
+					worstEval.add(assad.generation(), eval(worst));
+					eval.add(assad.generation(), (bestScore + worstScore) / 2F);
+					try {
+						chart.repaint();
+					}catch (Exception ignored) {}
+					;
+				}).count();
 		//)
 		//wtf
 		
 		System.out.println();
-		EvolutionResult<DoubleGene, Double> bestPop = list.get(0);
-		best = bestPop.bestPhenotype().genotype();
-		worst = list.get(list.size() - 1).bestPhenotype().genotype();
+		
 		RawBasicNeuralNet bestNet = new RawBasicNeuralNet(best, structure);
 		System.out.println("Best loss: " + eval(best));
 		System.out.println("Worst loss: " + eval(worst));
-		System.out.println("Population Left After Genocide: " + list.size());
 		System.out.println("Took: " + t.elapsedS());
+		System.out.println("Count: " + count);
 		System.out.println("Note: lower better");
 		System.out.println();
 		
@@ -144,18 +127,14 @@ public class XORTestJenetic {
 		System.out.println("Note: lower better");
 		model.delete();
 		lastPopulation.delete();
-		System.out.println("CSV: ");
 		
 		//for(Map.Entry<Long, Double> s : generationScore.entrySet()){
 		//	System.out.print(s.getKey()+","+s.getValue()+",");
 		//	score.add(s.getKey(),s.getValue());
 		//}
-		String assad = "Loss";
-		Chart chart = new Chart(assad + " Overtime", "Generation", assad);
-		chart.setSeries(evalScore, fitnessScore);
-		chart.spawn();
+		
+		
 		Files.writeString(model.toPath(), gson.toJson(bestNet), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-		SerializeData.dataOut(bestPop.population(), lastPopulation);
 		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
 		for (Thread thread : threadSet)
 			if (!thread.isDaemon())
@@ -164,9 +143,6 @@ public class XORTestJenetic {
 
 	public static boolean timeOut(EvolutionResult<DoubleGene, Double> evolutionResult) {
 		if (timerThreadLocal.get() == null) return false;
-		double eval = eval(evolutionResult.bestPhenotype().genotype());
-		fitnessScore.add(evolutionResult.generation(), evolutionResult.bestPhenotype().fitness());
-		evalScore.add(evolutionResult.generation(), eval);
 		boolean sample = (evolutionResult.generation() / sampleEvery) == sampleEvery;
 		if (beest == null || beest.fitness().compareTo(evolutionResult.bestPhenotype().fitness()) > 0 || sample) {
 			beest = evolutionResult.bestPhenotype();

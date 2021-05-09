@@ -1,18 +1,18 @@
 package org.o7.Fire.Experimental;
 
+import Atom.Reflect.UnThread;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.jfree.data.xy.XYDataItem;
+import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.o7.Fire.MachineLearning.Framework.Chart;
+import org.o7.Fire.Framework.XYRealtimeChart;
 import org.o7.Fire.MachineLearning.Framework.RawBasicNeuralNet;
 import org.o7.Fire.MachineLearning.Framework.Reactor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ReactorAutoPlay {
 	static File model = new File("ReactorTestJenetic-NeuralNetwork-Best.json");
@@ -23,36 +23,31 @@ public class ReactorAutoPlay {
 		RawBasicNeuralNet neuralNet = gson.fromJson(new FileReader(model), RawBasicNeuralNet.class);
 		int tick = 0;
 		int max = 100 * 1000;
-		ArrayList<XYDataItem> interfaceTimes = new ArrayList<>(max), heatOvertimes = new ArrayList<>(max), controlOvertimes = new ArrayList<>(max), reactorOutputOvertimes = new ArrayList<>(max), totalProfits = new ArrayList<>(max), totalProduceds = new ArrayList<>(max);
-		ReactorSeries totalProfit = new ReactorSeries("Total Profit (Million Dollar)", totalProfits);
-		ReactorSeries totalProduced = new ReactorSeries("Total Energy Produced (MW)", totalProduceds);
-		ReactorSeries heatOvertime = new ReactorSeries("Heat", heatOvertimes);
-		ReactorSeries controlOvertime = new ReactorSeries("Control", controlOvertimes);
-		ReactorSeries reactorOutputOvertime = new ReactorSeries("Output", reactorOutputOvertimes);
-		
-		Chart total = new Chart("Total Report", "Tick", "Total"), log = new Chart("Log Report", "Tick", "Factor");
+		XYSeries totalProfit = new XYSeries("Total Profit (Million Dollar)");
+		XYSeries totalProduced = new XYSeries("Total Energy Produced (MW)");
+		XYSeries heatOvertime = new XYSeries("Heat");
+		XYSeries controlOvertime = new XYSeries("Control");
+		XYSeries reactorOutputOvertime = new XYSeries("Output");
+		XYRealtimeChart total = new XYRealtimeChart("Total Report", "Tick", "Total"), log = new XYRealtimeChart("Log Report", "Tick", "Factor");
 		XYSeriesCollection c1 = new XYSeriesCollection(), c2 = new XYSeriesCollection();
 		c1.addSeries(totalProduced);
 		c1.addSeries(totalProfit);
-		c1.addSeries(new ReactorSeries("NN Interface Time (ms)", interfaceTimes));
 		c2.addSeries(heatOvertime);
 		c2.addSeries(controlOvertime);
 		c2.addSeries(reactorOutputOvertime);
-		
-		total.setDataset(c1);
-		log.setDataset(c2);
-		total.spawn();
-		log.spawn();
+		int maxItem = 100, maxItemReport = 5000;
+		totalProduced.setMaximumItemCount(maxItemReport);
+		totalProfit.setMaximumItemCount(maxItemReport);
+		heatOvertime.setMaximumItemCount(maxItem);
+		controlOvertime.setMaximumItemCount(maxItem);
+		reactorOutputOvertime.setMaximumItemCount(maxItem);
+		total.setCollection(c1);
+		log.setCollection(c2);
+		total.setVisible(true);
+		log.setVisible(true);
 		while (!r.reactorFuckingExploded() && tick < max) {
-			totalProfits.add(new XYDataItem(tick, r.getPayout()));
-			totalProduceds.add(new XYDataItem(tick, r.getMegawattTotalOutput()));
-			heatOvertimes.add(new XYDataItem(tick, r.getHeat()));
-			controlOvertimes.add(new XYDataItem(tick, r.getControl()));
-			reactorOutputOvertimes.add(new XYDataItem(tick, r.getPowerOutput()));
-			tick++;
-			long s = System.currentTimeMillis();
+			
 			neuralNet.process(r.factor());
-			interfaceTimes.add(new XYDataItem(tick, (double) System.currentTimeMillis() - s));
 			double[] output = neuralNet.process(r.factor());
 			if (output[0] > 0.5f) {
 				r.raiseControlRod();
@@ -61,22 +56,19 @@ public class ReactorAutoPlay {
 				r.lowerControlRod();
 			}
 			r.update();
+			totalProfit.add(new XYDataItem(tick, r.getPayout()));
+			totalProduced.add(new XYDataItem(tick, r.getMegawattTotalOutput()));
+			heatOvertime.add(new XYDataItem(tick, r.getHeat()));
+			controlOvertime.add(new XYDataItem(tick, r.getControl()));
+			reactorOutputOvertime.add(new XYDataItem(tick, r.getPowerOutput()));
+			tick++;
+			total.repaint();
+			log.repaint();
+			UnThread.sleep(16 * 2);
 		}
 		
 		
 	}
 	
-	public static class ReactorSeries extends org.jfree.data.xy.XYSeries {
-		
-		
-		public ReactorSeries(Comparable key, boolean autoSort, boolean allowDuplicateXValues, List<XYDataItem> list) {
-			super(key, autoSort, allowDuplicateXValues);
-			this.data = list;
-		}
-		
-		
-		public ReactorSeries(String profit, ArrayList<XYDataItem> items) {
-			this(profit, false, true, items);
-		}
-	}
+	
 }

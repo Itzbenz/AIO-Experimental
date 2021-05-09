@@ -8,7 +8,7 @@ import static Atom.Utility.Random.getBool;
 import static Atom.Utility.Random.getDouble;
 
 public enum NeuralFunction {
-	Identity(NeuralFunction::Identity), Relu(NeuralFunction::Relu), Tanh(NeuralFunction::Thanh), Binary(NeuralFunction::Binary), Sigmoid(NeuralFunction::Sigmoid);
+	Identity(NeuralFunction::Identity), Relu(NeuralFunction::Relu), Tanh(NeuralFunction::Thanh), Binary(NeuralFunction::Binary), Sigmoid(NeuralFunction::Sigmoid), Normalize(NeuralFunction::normalize);
 	
 	transient Function<Double, Double> function;
 	
@@ -36,14 +36,18 @@ public enum NeuralFunction {
 		return (2.0 / (1 + Math.pow(Math.E, -2 * val / 10.0))) - 1;
 	}
 	
+	public static double normalize(double val) {
+		if (val > 1) return 1;
+		if (val < -1) return 0;
+		return val;
+	}
+	
 	public static double Cost(double expected, double output) {
 		return Math.pow((double) 1 / 2 * (expected - output), 2);
 	}
 	
 	public static double loss(double[] output, double[] expected) {
 		double d = 0;
-		if (output.length != expected.length)
-			throw new IllegalArgumentException("Not same length: " + output.length + ", " + expected.length);
 		for (int i = 0; i < output.length; i++) {
 			d += Math.abs(output[i] - expected[i]);
 		}

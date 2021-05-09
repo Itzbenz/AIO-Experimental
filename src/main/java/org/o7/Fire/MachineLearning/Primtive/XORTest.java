@@ -1,11 +1,12 @@
 package org.o7.Fire.MachineLearning.Primtive;
 
+import Atom.Reflect.UnThread;
 import Atom.Time.Time;
 import Atom.Utility.Random;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.jfree.data.xy.XYSeries;
-import org.o7.Fire.MachineLearning.Framework.Chart;
+import org.o7.Fire.Framework.XYRealtimeChart;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,14 +19,17 @@ public class XORTest {
 	static Gson gson = new GsonBuilder().setPrettyPrinting().create();
 	static double[][] X = {{0F, 0F}, {1F, 0F}, {0F, 1F}, {1F, 1F}};
 	static double[][] Y = {{0F}, {1F}, {1F}, {0F}};
-	static long iteration = 0, sampleEvery = 1000;
+	static long iteration = 0, sampleEvery = 10000;
 	static boolean passed = false, training = false;
 	
 	static SimpleNeuralNet basic;
 	
-	public static final XYSeries fitnessScore = new XYSeries("Fitness");
+	static XYRealtimeChart chart = new XYRealtimeChart("XOR Simple Random Learning", "Iteration", "Loss");
+	static XYSeries fitnessScore = chart.getSeries("Fitness");
 	
 	public static void main(String[] args) throws IOException {
+		fitnessScore.setMaximumItemCount(200);
+		chart.setVisible(true);
 		if (!model.exists()) {
 			/*
 			basic = new SimpleNeuralNet(2, 2, (input, output) -> new SimpleLayer(input,output, NeuralFunction.Tanh));
@@ -34,7 +38,7 @@ public class XORTest {
 			 */
 			basic = new SimpleNeuralNet(2, Random.getInt(2, 6), (input, output) -> new SimpleLayer(input, output, NeuralFunction.Tanh));
 			basic.addRandomLayer(3, 2, 6, NeuralFunction.Tanh);
-			basic.add(1, NeuralFunction.Binary);
+			basic.add(1, NeuralFunction.Normalize);
 		}else {
 			System.out.println("Loading from: " + model.getPath());
 			basic = gson.fromJson(Files.readString(model.toPath()), SimpleNeuralNet.class);
@@ -43,6 +47,7 @@ public class XORTest {
 		System.out.println();
 		Time time = new Time(TimeUnit.MILLISECONDS);
 		while (!passed) {
+			UnThread.sleep(16);
 			passed = true;
 			double f = 0;
 			for (int i = 0; i < X.length; i++) {
@@ -53,6 +58,9 @@ public class XORTest {
 				}
 			}
 			fitnessScore.add(iteration, f);
+			try {
+				chart.repaint();
+			}catch (Exception e) {}
 			if ((iteration % sampleEvery) == 0) {
 				System.out.println("Iteration: " + iteration);
 				for (int i = 0; i < X.length; i++) {
@@ -77,8 +85,6 @@ public class XORTest {
 		System.out.println();
 		System.out.println(basic.visualizeString());
 		String assad = "Loss";
-		Chart chart = new Chart(assad + " Overtime", "Generation", assad);
-		chart.setSeries(fitnessScore);
-		chart.spawn();
+		
 	}
 }

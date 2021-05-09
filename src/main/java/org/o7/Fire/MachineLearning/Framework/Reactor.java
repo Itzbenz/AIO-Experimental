@@ -30,7 +30,7 @@ public class Reactor implements PoolObject.Object {
 	}
 	
 	public double[] factor() {
-		return new double[]{heat, control, heatGain, heatDissipation};
+		return new double[]{heat, control};
 	}
 	
 	public boolean reactorFuckingExploded() {
@@ -118,6 +118,10 @@ public class Reactor implements PoolObject.Object {
 	public Reactor setHeatDissipation(double heatDissipation) {
 		this.heatDissipation = heatDissipation;
 		return this;
+	}
+	
+	public double totalPower() {
+		return ((double) getTotalOutput() * 1.2f / getIteration());
 	}
 	
 	public double getPayout() {

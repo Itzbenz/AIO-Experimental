@@ -4,6 +4,7 @@ import Atom.Time.Time;
 import Atom.Utility.Random;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.o7.Fire.Framework.XYRealtimeChart;
 
 import java.io.File;
 import java.io.FileReader;
@@ -20,9 +21,11 @@ public class XORGeneticTest {
 	static long iteration = 0, sampleEvery = 1000;
 	static boolean passed = false, training = false;
 	static File model = new File("XOR-SimpleGenetic-NeuralNetwork.json");
+	static XYRealtimeChart chart = new XYRealtimeChart("Genetic XOR", "Iteration", "Loss");
+	static double lossTop = 100;
 	
 	public static void main(String[] args) throws IOException, ClassNotFoundException, CloneNotSupportedException {
-		ComparableSimpleNeuralNet[] population = new ComparableSimpleNeuralNet[100];
+		ComparableSimpleNeuralNet[] population = new ComparableSimpleNeuralNet[10];
 		if (model.exists()) {
 			//List<ComparableSimpleNeuralNet> c ;
 			//c = = SerializeData.dataIn(model);
@@ -30,18 +33,23 @@ public class XORGeneticTest {
 			//c.toArray(population);
 			population = gson.fromJson(new FileReader(model), population.getClass());
 		}
-		
+		update(population);
+		for (int i = 0; i < population.length; i++) {
+			chart.getSeries("Neural Net " + i).setMaximumItemCount(100);
+		}
+		chart.setVisible(true);
 		Time t = new Time(TimeUnit.MILLISECONDS);
-		for (int i = 0; i < 5; i++) {
+		while (lossTop > 0.4f) {
 			update(population);
 			test(population);
+			iteration++;
 		}
 		
 		Arrays.sort(population);
 		System.out.println("Top 1 Model:");
 		System.out.println(population[0].visualizeString());
 		System.out.println("Top 100 Model:");
-		System.out.println(population[99].visualizeString());
+		System.out.println(population[population.length - 1].visualizeString());
 		System.out.println("Top 1 Last Error: " + population[0].lastError());
 		System.out.println("Top 100 Last Error: " + population[99].lastError());
 		System.out.println("Finished in: " + t.elapsedS());
@@ -50,12 +58,18 @@ public class XORGeneticTest {
 		//SerializeData.dataOut(Arrays.asList(population),model);
 		Files.writeString(model.toPath(), gson.toJson(population), StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 	}
-	
+
 	public static void test(ComparableSimpleNeuralNet[] arr) {
+		int pop = 0;
 		for (ComparableSimpleNeuralNet c : arr) {
+			double loss = -1;
 			for (int i = 0; i < X.length; i++) {
-				c.error(X[i], Y[i]);
+				loss = c.error(X[i], Y[i]);
 			}
+			if (loss < lossTop) lossTop = loss;
+			chart.getSeries("Neural Net " + pop).add(iteration, loss);
+			chart.repaint();
+			pop++;
 		}
 		
 	}
@@ -63,7 +77,7 @@ public class XORGeneticTest {
 	public static void update(ComparableSimpleNeuralNet[] arr) throws CloneNotSupportedException {
 		for (int i = 0; i < arr.length; i++) {
 			
-			int get = Random.getInt(0, 10);//get random top population
+			int get = Random.getInt(0, arr.length / 4);//get random top population
 			ComparableSimpleNeuralNet top;
 			top = arr[get];
 			if (top == null) {//fallback
