@@ -1,16 +1,59 @@
 package Ozone.Patch.Mindustry;
 
 import Atom.Reflect.Reflect;
+import Atom.Reflect.UnThread;
+import Atom.Utility.Pool;
 import Ozone.Net.LoggableNet;
 import arc.struct.IntMap;
 import mindustry.Vars;
 import mindustry.net.Net;
 import mindustry.net.Packets;
 import mindustry.net.Streamable;
+import org.jfree.data.xy.XYSeries;
+import org.o7.Fire.Experimental.Main;
+import org.o7.Fire.Framework.XYRealtimeChart;
+
+import java.io.IOException;
 
 public class NetPatched extends LoggableNet {
-	public static String ip;
-	public static int port;
+	static final XYRealtimeChart pingChart = new XYRealtimeChart("Ping Chart", "Iteration", "ms");
+	public static volatile String ip;
+	public static volatile int port;
+	static long l = 0;
+	static XYSeries series = null;
+	
+	static {
+		pingChart.setVisible(true);
+		Pool.daemon(() -> {
+			while (true) {
+				try {
+					if (ip == null) return;
+					String current = ip + ":" + port;
+					if (series == null) {
+						series = pingChart.getSeries(current);
+						series.setMaximumItemCount(500);
+					}
+					if (!series.getKey().equals(current)) {
+						pingChart.getCollection().removeSeries(series);
+						series = null;
+						l = 0;
+						return;
+					}
+					int i = 0;
+					try {
+						i = Main.ping();
+					}catch (IOException e) {
+						i = 0;
+					}
+					series.add(l++, i);
+					pingChart.repaint();
+					UnThread.sleep(16 * 2);
+				}catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}).start();
+	}
 	
 	public NetPatched(Net net) {
 		super(net);

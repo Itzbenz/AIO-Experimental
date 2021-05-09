@@ -10,7 +10,6 @@ import arc.Events;
 import arc.func.Prov;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
-import arc.util.Log;
 import arc.util.Time;
 import arc.util.pooling.Pools;
 import com.google.gson.Gson;
@@ -21,9 +20,7 @@ import io.jenetics.IntegerGene;
 import io.jenetics.Optimize;
 import io.jenetics.engine.Engine;
 import io.jenetics.engine.EvolutionResult;
-import io.jenetics.engine.EvolutionStatistics;
 import io.jenetics.engine.Limits;
-import io.jenetics.stat.DoubleMomentStatistics;
 import io.jenetics.util.Factory;
 import mindustry.Vars;
 import mindustry.game.EventType;
@@ -35,8 +32,6 @@ import mindustry.net.Host;
 import mindustry.net.Net;
 import mindustry.net.NetworkIO;
 import mindustry.net.Packets;
-import org.jfree.data.xy.XYSeries;
-import org.o7.Fire.Framework.XYRealtimeChart;
 import org.o7.Fire.MachineLearning.Framework.RawBasicNeuralNet;
 import org.o7.Fire.MachineLearning.Framework.RawNeuralNet;
 
@@ -45,11 +40,9 @@ import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class Main extends Mod {
 	static File model = new File("XOR-Jenetic-NeuralNetwork.json"), lastPopulation = new File("XOR-Jenetic-Population.obj");
@@ -59,17 +52,15 @@ public class Main extends Mod {
 	static SocketAddress sa = InetSocketAddress.createUnresolved("18.221.225.153", 2080);
 	static Proxy proxy = new Proxy(Proxy.Type.SOCKS, sa);
 	static Prov<DatagramPacket> packetSupplier = () -> new DatagramPacket(new byte[512], 512);
-	static final XYRealtimeChart pingChart = new XYRealtimeChart("Ping Chart", "Iteration", "ms");
-	static final AtomicLong count = new AtomicLong();
+	
 	static Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 100, r -> {
 		Thread t = Executors.defaultThreadFactory().newThread(r);
 		t.setDaemon(true);
 		t.setPriority(1);
 		return t;
 	});
-	static XYSeries series = null;
 	
-	public int ping() throws IOException {
+	public static int ping() throws IOException {
 		DatagramSocket socket = new DatagramSocket();
 		long time = Time.millis();
 		socket.send(new DatagramPacket(new byte[]{-2, 1}, 2, InetAddress.getByName(NetPatched.ip), NetPatched.port));
@@ -109,8 +100,8 @@ public class Main extends Mod {
 					for (int i = 0; i < randomArray.length; i++) {
 						randomArray[i] = Random.getDouble(-100, 100);
 					}
-					Log.info("Structure: " + Arrays.toString(structure));
-					Log.info("Knob: " + knob);
+					//Log.info("Structure: " + Arrays.toString(structure));
+					//Log.info("Knob: " + knob);
 					RawBasicNeuralNet raw = new RawBasicNeuralNet(randomArray, structure);
 					basicNeuralNet = new AddInputRawNeuralNet(raw, 2);
 				}
@@ -177,16 +168,12 @@ public class Main extends Mod {
 			}).growX().row();
 			t.button("Stress Test", () -> {
 				Vars.ui.showConfirm("Stress Tester", "Target: " + String.valueOf(NetPatched.ip) + ":" + String.valueOf(NetPatched.port), () -> {
-					if (series != null) pingChart.getCollection().removeSeries(series);
-					series = pingChart.getSeries(NetPatched.ip + ":" + NetPatched.port);
-					series.setMaximumItemCount(500);
-					count.set(0);
-					Core.scene.clear();
+					
+					Vars.ui.settings.hide();
 					Pool.daemon(() -> {
-						EvolutionStatistics<Integer, DoubleMomentStatistics> stat = EvolutionStatistics.ofNumber();
-						Genotype<IntegerGene> result = engine.stream().limit(Limits.byExecutionTime(Duration.ofSeconds(30))).peek(stat).collect(EvolutionResult.toBestGenotype());
+						
+						Genotype<IntegerGene> result = engine.stream().limit(Limits.byExecutionTime(Duration.ofSeconds(30))).collect(EvolutionResult.toBestGenotype());
 						System.out.println(result);
-						System.out.println(stat);
 					}).start();
 				});
 				
@@ -216,7 +203,6 @@ public class Main extends Mod {
 			i = 0;
 		}
 		
-		series.add(count.getAndAdd(1), i);
 		return i;
 		
 	}
