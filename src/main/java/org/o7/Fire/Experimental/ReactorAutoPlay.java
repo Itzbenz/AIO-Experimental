@@ -4,14 +4,19 @@ import Atom.Reflect.UnThread;
 import com.github.chen0040.rl.learning.sarsa.SarsaLearner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.deeplearning4j.rl4j.policy.DQNPolicy;
 import org.jfree.data.xy.XYDataItem;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 import org.o7.Fire.Framework.XYRealtimeChart;
 import org.o7.Fire.MachineLearning.Framework.Reactor;
+import org.o7.Fire.MachineLearning.RL4J.ReactorDQN;
+import org.o7.Fire.MachineLearning.RL4J.ReactorMDP;
+import org.o7.Fire.MachineLearning.RL4J.ReactorMDPDiscrete;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
@@ -31,12 +36,20 @@ public class ReactorAutoPlay {
 	static XYSeries stateC = chart.getSeries("Current State ID"), actionC = chart.getSeries("Current Action ID"), rewardC = chart.getSeries("Reward");
 	static int lastState = 0, lastAction = 0;
 	
+	public static DQNPolicy<ReactorMDP.ReactorObserver> DQN = null;
+	
+	static {
+		cachedAction.put(0, Set.of(0, 2));
+		cachedAction.put(1, Set.of(0, 1, 2));
+		cachedAction.put(2, Set.of(0, 1));
+	}
+	
 	static {
 		if (model.exists()) try {
 			System.out.println("Loading: " + model.getAbsolutePath());
 			learner = SarsaLearner.fromJson(Files.readString(model.toPath()));
-		}catch (IOException e) {
-			throw new RuntimeException(e);
+		}catch(Throwable e){
+			//throw new RuntimeException(e);
 		}
 		int maxItem = 500;
 		stateC.setMaximumItemCount(maxItem);
@@ -45,13 +58,14 @@ public class ReactorAutoPlay {
 		chart.setVisible(true);
 	}
 	
-	static {
-		cachedAction.put(0, Set.of(0, 2));
-		cachedAction.put(1, Set.of(0, 1, 2));
-		cachedAction.put(2, Set.of(0, 1));
+	public static Set<Integer> availableAction(Reactor r) {
+		int state = (int) (r.getHeat() * 100);
+		if (state > 98) return cachedAction.get(2);
+		if (state <= 1) return cachedAction.get(0);
+		return cachedAction.get(1);
 	}
 	
-	public static void main(String[] args) throws FileNotFoundException {
+	public static void main(String[] args) throws Exception {
 		Reactor r = new Reactor();
 		//RawBasicNeuralNet neuralNet = gson.fromJson(new FileReader(model), RawBasicNeuralNet.class);
 		int tick = 0;
@@ -80,8 +94,8 @@ public class ReactorAutoPlay {
 		log.setVisible(true);
 		while (!r.reactorFuckingExploded() && tick < max) {
 			
-			aiDoSomething(r, tick);
-			
+			//sarsa(r, tick);
+			DQN(r, tick);
 			
 			totalProfit.add(new XYDataItem(tick, r.getPayout()));
 			totalProduced.add(new XYDataItem(tick, r.getMegawattTotalOutput()));
@@ -97,24 +111,33 @@ public class ReactorAutoPlay {
 		
 	}
 	
-	public static Set<Integer> availableAction(Reactor r) {
-		int state = (int) (r.getHeat() * 100);
-		if (state > 98) return cachedAction.get(2);
-		if (state <= 1) return cachedAction.get(0);
-		return cachedAction.get(1);
+	public static void DQN(Reactor r, long iteration) throws IOException {
+		if (DQN == null){
+			System.out.println("Loading: " + ReactorDQN.save.getAbsolutePath());
+			DQN = DQNPolicy.load(ReactorDQN.save.getAbsoluteFile().getAbsolutePath());
+			System.out.println("Loaded");
+		}
+		
+		INDArray p = Nd4j.create(r.factor(), 1, r.factor().length);
+		int i = DQN.nextAction(p);
+		ReactorMDPDiscrete.doAction(r, i);
+		r.update();
+		stateC.add(iteration, r.getControl() * 100);
+		actionC.add(iteration, i * 30);
+		rewardC.add(iteration, r.getPowerOutput() * 100);
 	}
 	
-	public static void aiDoSomething(Reactor r, long iteration) {
+	public static void sarsa(Reactor r, long iteration) {
 		int state = (int) (r.getHeat() * 100);
 		int action = learner.selectAction(state).getIndex();
 		if (action == -1) action = 0;
-		if (action == 0) {
+		if (action == 0){
 		
-		}else if (action == 1) {
+		}else if (action == 1){
 			r.lowerControlRod();
-		}else if (action == 2) {
+		}else if (action == 2){
 			r.raiseControlRod();
-		}else {
+		}else{
 			throw new IllegalArgumentException("Action: " + action);
 		}
 		r.update();

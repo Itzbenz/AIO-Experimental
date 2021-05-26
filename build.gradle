@@ -54,6 +54,7 @@ allprojects {
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
         maven { url "https://oss.sonatype.org/content/repositories/releases/" }
         maven { url 'https://jitpack.io' }
+        google()
     }
 
     ext {
@@ -107,9 +108,11 @@ allprojects {
             implementation "com.github.o7-Fire.Atomic-Library:Desktop:$atomHash"
             compileOnly ("com.github.Anuken.Mindustry:desktop:$mindustryHash")
             implementation group: 'io.jenetics', name: 'jenetics', version: '6.2.0'
+            implementation group: 'org.deeplearning4j', name: 'rl4j-core', version: '1.0.0-beta7'
+            implementation group: 'org.nd4j', name: 'nd4j-native-platform', version: '1.0.0-beta7'
 
             implementation group: 'com.github.chen0040', name: 'java-reinforcement-learning', version: '1.0.5'
-            compileOnly group: 'com.discord4j', name: 'discord4j-core', version: '3.2.0-M3'
+            implementation group: 'com.discord4j', name: 'discord4j-core', version: '3.2.0-M3'
             implementation 'org.jfree:jfreechart:1.5.3'
         }
 
