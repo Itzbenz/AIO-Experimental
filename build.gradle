@@ -44,7 +44,7 @@ static File getLatestFolder(File fe){
     });
     return f.get(f.size() - 1);
 }
-mainClassName = System.getProperty("exec.mainClass") ?: "default.Main"
+
 allprojects {
     apply plugin: 'java'
     apply plugin: 'java-library'
@@ -250,4 +250,12 @@ task unrun(type: JavaExec) {
     classpath = files(mindustry.getAbsolutePath())
     classpath += sourceSets.main.runtimeClasspath
     main = "mindustry.desktop.DesktopLauncher"
+}
+
+task run(type: JavaExec) {
+    URL u = new URL("https://github.com/Anuken/Mindustry/releases/download/" + mindustryHash + "/Mindustry.jar");
+    File mindustry = new File(new File(new File(OS.getAppDataDirectoryString("Mindustry")), "build/cache/"), u.getFile());
+    classpath = files(mindustry.getAbsolutePath())
+    classpath += sourceSets.main.runtimeClasspath
+    main = "org.o7.Fire.Experimental.Java"
 }

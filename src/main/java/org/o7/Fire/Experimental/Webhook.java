@@ -18,7 +18,7 @@ public class Webhook {
     public static URL realUrl;
     static Gson gson = new GsonBuilder().create();
     static Webhook h = new Webhook();
-    static String url = "https://discord.com/api/webhooks/846270084346675211/7S2lEIfc0fWzZPUvXO9a6xM_3CcAu9vryoX6MEfUtLMVA1q8-sK4sAbYirk3VKVKYxPE";
+    static String url = "https://discord.com/api/webhooks/848190640373235752/WMml7em9QCxYanPPsgr0Idt8sPCtRPJ7ZzwV9A3eO4ul7pFeib_zLWBIZCpl_6KV-FTL";
     static String assad = "curl -i -H \"Accept: application/json\" -H \"Content-Type:application/json\" -X POST --url " + url;
     
     static {
