@@ -95,6 +95,7 @@ allprojects {
 
         //From Root to every project
         dependencies{
+            //Mindustry
             compileOnly ("com.github.Anuken.Arc:arc-core:$arcHash"){
                 because("provided")
             }
@@ -104,22 +105,27 @@ allprojects {
             compileOnly ("com.github.Anuken.Mindustry:core:$mindustryHash"){
                 because("provided")
             }
-            implementation "com.github.o7-Fire.Atomic-Library:Atomic:$atomHash"
-            implementation "com.github.o7-Fire.Atomic-Library:Desktop:$atomHash"
             compileOnly ("com.github.Anuken.Mindustry:desktop:$mindustryHash")
-            implementation group: 'io.jenetics', name: 'jenetics', version: '6.2.0'
+
+            //DL4J and its cult
             implementation (group: 'org.deeplearning4j', name: 'rl4j-core', version: '1.0.0-M1'){
                 exclude group: 'org.bytedeco', module: 'opencv-platform'
                 exclude group: 'org.bytedeco', module: 'leptonica-platform'
                 exclude group: 'org.bytedeco', module: 'hdf5-platform'
             }
-            implementation group: 'org.nd4j', name: 'nd4j-native-platform', version: '1.0.0-beta7'
-            //implementation group: 'org.nd4j', name: 'nd4j-cuda-10.2', version: '1.0.0-beta7'
-            //implementation group: 'org.deeplearning4j', name: 'deeplearning4j-cuda-10.2', version: '1.0.0-beta7'
+            implementation group: 'org.nd4j', name: 'nd4j-native-linux-x86_64', version: '1.0.0-M1'
+            //if you had Nvidia GPU (smh Nvidia only)
+            //implementation group: 'org.bytedeco', name: 'cuda-platform-redist', version: '11.2-8.1-1.5.5'
+            //implementation group: 'org.nd4j', name: 'nd4j-cuda-11.2', version: '1.0.0-M1'
+            //implementation group: 'org.deeplearning4j', name: 'deeplearning4j-cuda-11.2-platform', version: '1.0.0-M1'
+
+            //Random Stuff
+            implementation group: 'io.jenetics', name: 'jenetics', version: '6.2.0'
             implementation group: 'com.github.chen0040', name: 'java-reinforcement-learning', version: '1.0.5'
             implementation group: 'com.discord4j', name: 'discord4j-core', version: '3.2.0-M3'
             implementation 'org.jfree:jfreechart:1.5.3'
-
+            implementation "com.github.o7-Fire.Atomic-Library:Atomic:$atomHash"
+            implementation "com.github.o7-Fire.Atomic-Library:Desktop:$atomHash"
 
         }
 

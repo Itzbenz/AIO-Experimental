@@ -52,14 +52,24 @@ public class Webhook {
             // enable output and input
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
+            String doAnother = "";
+            if (h.content.length() > 1920){
+                doAnother = h.content.substring(1900);
+                h.content = h.content.substring(0, 1900);
+            }
             h.content = "```java\n" + h.content + "\n```";
             conn.getOutputStream().write(gson.toJson(h).getBytes(StandardCharsets.UTF_8));
             conn.getOutputStream().flush();
             conn.getOutputStream().close();
             conn.getInputStream().close();
             conn.disconnect();
+            if (!doAnother.isEmpty()){
+                h.content = doAnother;
+                post();
+            }
         }catch(Exception e){
             e.printStackTrace();
+            System.err.println(gson.toJson(h));
         }
     }
     
