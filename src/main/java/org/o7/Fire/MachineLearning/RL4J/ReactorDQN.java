@@ -1,12 +1,16 @@
 package org.o7.Fire.MachineLearning.RL4J;
 
+import Atom.Reflect.UnThread;
 import org.deeplearning4j.rl4j.learning.sync.qlearning.QLearning;
 import org.deeplearning4j.rl4j.learning.sync.qlearning.discrete.QLearningDiscreteDense;
 import org.deeplearning4j.rl4j.network.dqn.DQNFactoryStdDense;
 import org.deeplearning4j.rl4j.policy.DQNPolicy;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.RmsProp;
 import org.o7.Fire.Experimental.Webhook;
 import org.o7.Fire.MachineLearning.Framework.Reactor;
+import org.o7.Fire.MachineLearning.Reinforcement.ReactorControl;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,7 +20,17 @@ public class ReactorDQN {
     
     public static void main(String[] args) {
         Webhook.hook();
-        if (!save.exists()) reactorDQN();
+        if (!save.exists()){
+            DQNPolicy<ReactorMDP.ReactorObserver> dqn = reactorDQN();
+            Reactor r = ReactorControl.reactor;
+            while (r.reactorFuckingExploded() || r.getIteration() < 60) {
+                INDArray p = Nd4j.create(r.factor(), 1, r.factor().length);
+                int i = dqn.nextAction(p);
+                ReactorMDPDiscrete.doAction(r, i);
+                ReactorControl.update();
+                UnThread.sleep(1000);
+            }
+        }
         System.out.println(save.getAbsolutePath());
         System.out.println("Finished");
     }
