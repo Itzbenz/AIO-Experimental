@@ -5,8 +5,6 @@ import org.deeplearning4j.rl4j.learning.sync.qlearning.QLearning;
 import org.deeplearning4j.rl4j.learning.sync.qlearning.discrete.QLearningDiscreteDense;
 import org.deeplearning4j.rl4j.network.dqn.DQNFactoryStdDense;
 import org.deeplearning4j.rl4j.policy.DQNPolicy;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.RmsProp;
 import org.o7.Fire.Experimental.Webhook;
 import org.o7.Fire.MachineLearning.Framework.Reactor;
@@ -24,9 +22,7 @@ public class ReactorDQN {
             DQNPolicy<ReactorMDP.ReactorObserver> dqn = reactorDQN();
             Reactor r = ReactorControl.reactor;
             while (r.reactorFuckingExploded() || r.getIteration() < 60) {
-                INDArray p = Nd4j.create(r.factor(), 1, r.factor().length);
-                int i = dqn.nextAction(p);
-                ReactorMDPDiscrete.doAction(r, i);
+                ReactorMDPDiscrete.doAction(dqn);
                 ReactorControl.update();
                 UnThread.sleep(1000);
             }

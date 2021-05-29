@@ -2,10 +2,14 @@ package org.o7.Fire.MachineLearning.RL4J;
 
 import org.deeplearning4j.gym.StepReply;
 import org.deeplearning4j.rl4j.mdp.MDP;
+import org.deeplearning4j.rl4j.policy.Policy;
 import org.deeplearning4j.rl4j.space.ArrayObservationSpace;
 import org.deeplearning4j.rl4j.space.DiscreteSpace;
 import org.deeplearning4j.rl4j.space.ObservationSpace;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 import org.o7.Fire.MachineLearning.Framework.Reactor;
+import org.o7.Fire.MachineLearning.Reinforcement.ReactorControl;
 
 public class ReactorMDPDiscrete implements MDP<ReactorMDP.ReactorObserver, Integer, DiscreteSpace> {
     ReactorMDP.ReactorObserver observer;
@@ -19,6 +23,16 @@ public class ReactorMDPDiscrete implements MDP<ReactorMDP.ReactorObserver, Integ
         discreteSpace = new DiscreteSpace(r.factor().length);
         observationSpace = new ArrayObservationSpace<>(new int[]{r.factor().length});
         
+    }
+    
+    public static void doAction(Policy<Integer> policy) {
+        doAction(policy, ReactorControl.reactor);
+    }
+    
+    public static void doAction(Policy<Integer> policy, Reactor r) {
+        INDArray p = Nd4j.create(r.factor(), 1, r.factor().length);
+        int i = policy.nextAction(p);
+        doAction(r, i);
     }
     
     public static void doAction(Reactor r, int integer) {

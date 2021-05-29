@@ -1,6 +1,5 @@
 package org.o7.Fire.Experimental;
 
-import Atom.Utility.Pool;
 import Atom.Utility.Random;
 import Atom.Utility.Utility;
 import com.google.gson.Gson;
@@ -13,16 +12,18 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Webhook {
     public static URL realUrl;
     static Gson gson = new GsonBuilder().create();
-    static Webhook h = new Webhook();
+    final static Webhook h = new Webhook();
     static String url = "https://discord.com/api/webhooks/848190640373235752/WMml7em9QCxYanPPsgr0Idt8sPCtRPJ7ZzwV9A3eO4ul7pFeib_zLWBIZCpl_6KV-FTL";
     static String assad = "curl -i -H \"Accept: application/json\" -H \"Content-Type:application/json\" -X POST --url " + url;
-    
+    static ExecutorService executorService = Executors.newCachedThreadPool();
     static {
-        h.username = "Google Compute";
+        h.username = "o7Fire Compute Network";
         h.content = "h";
     }
     
@@ -38,7 +39,7 @@ public class Webhook {
     
     public static void post(String dat) {
         h.content = dat.replaceAll("itzbenz", "runner");
-        Pool.submit((Runnable) Webhook::post);
+        executorService.submit((Runnable) Webhook::post);
     }
     
     public static void post() {

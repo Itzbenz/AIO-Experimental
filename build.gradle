@@ -113,7 +113,10 @@ allprojects {
                 exclude group: 'org.bytedeco', module: 'leptonica-platform'
                 exclude group: 'org.bytedeco', module: 'hdf5-platform'
             }
-            implementation group: 'org.nd4j', name: 'nd4j-native-linux-x86_64', version: '1.0.0-M1'
+            //TODO fix native or revert to previous version
+            implementation group: 'org.nd4j', name: 'nd4j-native', version: '1.0.0-M1'
+            implementation group: 'org.nd4j', name: 'nd4j-native', version: '1.0.0-M1', classifier: "linux-x86_64"
+
             //if you had Nvidia GPU (smh Nvidia only)
             //implementation group: 'org.bytedeco', name: 'cuda-platform-redist', version: '11.2-8.1-1.5.5'
             //implementation group: 'org.nd4j', name: 'nd4j-cuda-11.2', version: '1.0.0-M1'
