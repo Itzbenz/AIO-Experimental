@@ -28,8 +28,8 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'java-library'
 
-sourceCompatibility = "14"
-targetCompatibility = "14"
+sourceCompatibility = "11"
+targetCompatibility = "11"
 
 static File getLatestFolder(File fe){
     ArrayList<File> f = new ArrayList<>();
@@ -44,7 +44,7 @@ static File getLatestFolder(File fe){
     });
     return f.get(f.size() - 1);
 }
-
+mainClassName = System.getProperty("exec.mainClass") ?: "default.Main"
 allprojects {
     apply plugin: 'java'
     apply plugin: 'java-library'
@@ -108,12 +108,19 @@ allprojects {
             implementation "com.github.o7-Fire.Atomic-Library:Desktop:$atomHash"
             compileOnly ("com.github.Anuken.Mindustry:desktop:$mindustryHash")
             implementation group: 'io.jenetics', name: 'jenetics', version: '6.2.0'
-            implementation group: 'org.deeplearning4j', name: 'rl4j-core', version: '1.0.0-beta7'
+            implementation (group: 'org.deeplearning4j', name: 'rl4j-core', version: '1.0.0-M1'){
+                exclude group: 'org.bytedeco', module: 'opencv-platform'
+                exclude group: 'org.bytedeco', module: 'leptonica-platform'
+                exclude group: 'org.bytedeco', module: 'hdf5-platform'
+            }
             implementation group: 'org.nd4j', name: 'nd4j-native-platform', version: '1.0.0-beta7'
-
+            //implementation group: 'org.nd4j', name: 'nd4j-cuda-10.2', version: '1.0.0-beta7'
+            //implementation group: 'org.deeplearning4j', name: 'deeplearning4j-cuda-10.2', version: '1.0.0-beta7'
             implementation group: 'com.github.chen0040', name: 'java-reinforcement-learning', version: '1.0.5'
             implementation group: 'com.discord4j', name: 'discord4j-core', version: '3.2.0-M3'
             implementation 'org.jfree:jfreechart:1.5.3'
+
+
         }
 
     }
@@ -235,7 +242,7 @@ task copyMods(){
         copyToMindustry(new File(new File(projectDir.toString()), "build/libs/"+modsNname+".jar"))
     }
 }
-task run(type: JavaExec) {
+task unrun(type: JavaExec) {
     dependsOn download
     dependsOn copyMods
     URL u = new URL("https://github.com/Anuken/Mindustry/releases/download/" + mindustryHash + "/Mindustry.jar");

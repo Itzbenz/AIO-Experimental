@@ -39,19 +39,24 @@ public class ReactorDQN {
                 .doubleDQN(true);      // double DQN
         System.out.println(h);
         QLearning.QLConfiguration CARTPOLE_QL = h.build();
-        
+    
         // The neural network used by the agent. Note that there is no need to specify the number of inputs/outputs.
         // These will be read from the gym environment at the start of training.
-        DQNFactoryStdDense.Configuration CARTPOLE_NET = DQNFactoryStdDense.Configuration.builder().l2(0).updater(new RmsProp(0.000025)).numHiddenNodes(300).numLayer(2).build();
-        
+        DQNFactoryStdDense.Configuration CARTPOLE_NET = DQNFactoryStdDense.Configuration.builder()//
+                .l2(0)//
+                .updater(new RmsProp(0.000025))//
+                .numHiddenNodes(1500)//h
+                .numLayer(5)//why yes
+                .build();
+    
         ReactorMDPDiscrete mdp = new ReactorMDPDiscrete(new Reactor());
-        
+    
         //Create the solver.
         QLearningDiscreteDense<ReactorMDP.ReactorObserver> dql = new QLearningDiscreteDense<>(mdp, CARTPOLE_NET, CARTPOLE_QL);
-        
+    
         dql.train();
         mdp.close();
-        
+    
         try {
             dql.getPolicy().save(save.getAbsoluteFile().getAbsolutePath());
         }catch(IOException e){
