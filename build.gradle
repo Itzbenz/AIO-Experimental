@@ -108,14 +108,19 @@ allprojects {
             compileOnly ("com.github.Anuken.Mindustry:desktop:$mindustryHash")
 
             //DL4J and its cult
-            implementation (group: 'org.deeplearning4j', name: 'rl4j-core', version: '1.0.0-M1'){
+            implementation (group: 'org.deeplearning4j', name: 'rl4j-core', version: '1.0.0-beta7'){
                 exclude group: 'org.bytedeco', module: 'opencv-platform'
+                exclude group: 'org.bytedeco', module: 'open-cv'
                 exclude group: 'org.bytedeco', module: 'leptonica-platform'
                 exclude group: 'org.bytedeco', module: 'hdf5-platform'
+                exclude group: 'org.bytedeco', module: 'ffmpeg-platform'
+                exclude group: 'org.bytedeco', module: 'ffmpeg'
             }
             //TODO fix native or revert to previous version
-            implementation group: 'org.nd4j', name: 'nd4j-native', version: '1.0.0-M1'
-            implementation group: 'org.nd4j', name: 'nd4j-native', version: '1.0.0-M1', classifier: "linux-x86_64"
+            implementation group: 'org.nd4j', name: 'nd4j-native-platform', version: '1.0.0-beta7'
+
+            //implementation group: 'org.nd4j', name: 'nd4j-native', version: '1.0.0-M1'
+            //implementation group: 'org.nd4j', name: 'nd4j-native', version: '1.0.0-M1', classifier: "linux-x86_64"
 
             //if you had Nvidia GPU (smh Nvidia only)
             //implementation group: 'org.bytedeco', name: 'cuda-platform-redist', version: '11.2-8.1-1.5.5'
