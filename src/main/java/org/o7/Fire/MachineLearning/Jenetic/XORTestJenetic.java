@@ -75,7 +75,7 @@ public class XORTestJenetic {
 		//     for the problem.
 		
 		
-		Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2, Pool.daemonFactory);
+		Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() - 1, Pool.daemonFactory);
 		
 		// Codecs.ofVector(DoubleRange.of(-maxRange,maxRange), knob);
 		EvolutionStatistics<Double, DoubleMomentStatistics> stat = EvolutionStatistics.ofNumber();
