@@ -109,20 +109,13 @@ public class PolicyJenetic implements Serializable {
         chart.setVisible(true);
     }
     
-    private double eval(Function<Integer, Byte> integerByteFunction) {
-        Reactor reactor = reactorPool.obtain();
-        
-        for (int i = 0; i < 20; i++) {
-            byte b = integerByteFunction.apply(reactor.state());
-            boolean none = b > -100 && b < 100, up = b > 0;
-            if (!none){
-                if (up) reactor.raiseControlRod();
-                else reactor.lowerControlRod();
-            }
-            reactor.update();
-            if (reactor.reactorFuckingExploded()) break;
+    public static void play(Reactor reactor, Function<Integer, Byte> f) {
+        byte b = f.apply(reactor.state());
+        boolean none = b > -100 && b < 100, up = b > 0;
+        if (!none){
+            if (up) reactor.raiseControlRod();
+            else reactor.lowerControlRod();
         }
-        return reactor.getPayout();
     }
     
     public void train() {
@@ -133,13 +126,28 @@ public class PolicyJenetic implements Serializable {
                 .build());
     }
     
+    private double eval(Function<Integer, Byte> integerByteFunction) {
+        Reactor reactor = reactorPool.obtain();
+        
+        for (int i = 0; i < 20; i++) {
+            play(reactor, integerByteFunction);
+            reactor.update();
+            if (reactor.reactorFuckingExploded()) break;
+        }
+        return reactor.getPayout();
+    }
+    
+    public void play(Reactor r) {
+        play(r, this::getAction);
+    }
+    
     public void handleResult(EvolutionResult<ByteGene, Double> g) {
         Phenotype<ByteGene, Double> best = g.bestPhenotype();
         for (Phenotype<ByteGene, Double> pop : g.population()) {
             if (best == pop) continue;
             genotypeFactory.free(pop.genotype());
         }
-    
+        
         resultTraining.add(best);
         resultTraining.sort((o1, o2) -> o2.fitness().compareTo(o1.fitness()));
         if (logTimer.get()){
