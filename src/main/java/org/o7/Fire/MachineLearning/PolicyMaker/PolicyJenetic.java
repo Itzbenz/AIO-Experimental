@@ -18,6 +18,8 @@ import org.o7.Fire.MachineLearning.Framework.Reactor;
 
 import java.awt.*;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -42,7 +44,7 @@ public class PolicyJenetic implements Serializable {
     };
     protected transient XYSeries fitnessChart = null;
     protected transient XYRealtimeChart chart;
-    ;
+    
     protected transient ArrayListCapped<Phenotype<ByteGene, Double>> resultTraining = new ArrayListCapped<>(100) {
         @Override
         public void trim() {
@@ -52,6 +54,10 @@ public class PolicyJenetic implements Serializable {
         }
     };
     protected transient Timer logTimer = new Timer(TimeUnit.SECONDS, 2);
+    
+    public PolicyJenetic(File f) throws FileNotFoundException {
+        load(f);
+    }
     
     public PolicyJenetic() {}
     
@@ -72,13 +78,28 @@ public class PolicyJenetic implements Serializable {
         Reactor reactor = new Reactor();
         reactor.state();
         PolicyJenetic policyJenetic = new PolicyJenetic(reactor.maxState());
+        File json = new File(policyJenetic.getClass().getCanonicalName() + ".json");
+        if (json.exists()){
+            try {
+                policyJenetic.load(json);
+            }catch(FileNotFoundException e){
+                e.printStackTrace();
+            }
+        }
         if (!GraphicsEnvironment.isHeadless()){
             policyJenetic.enableGraph();
         }else{
             Webhook.hook();
         }
         policyJenetic.train();
-        FileUtility.write(new File(policyJenetic.getClass().getCanonicalName() + ".json"), gson.toJson(policyJenetic).getBytes(StandardCharsets.UTF_8));
+        FileUtility.write(json, gson.toJson(policyJenetic).getBytes(StandardCharsets.UTF_8));
+    }
+    
+    public void load(File json) throws FileNotFoundException {
+        PolicyJenetic jenetic = gson.fromJson(new FileReader(json), PolicyJenetic.class);
+        currentPolicy = jenetic.currentPolicy;
+        trainCount += jenetic.trainCount;
+        maxStateSize += maxStateSize;
     }
     
     public void enableGraph() {
