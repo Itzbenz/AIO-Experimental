@@ -74,18 +74,17 @@ public class PolicyJenetic implements Serializable {
         this.genotypeFactory = new ByteGene.GenotypeFactory(maxStateSize);
     }
     
+    public static File json = new File(PolicyJenetic.class.getCanonicalName() + ".json");
+    
+    public static PolicyJenetic getTrained() throws FileNotFoundException {
+        return new PolicyJenetic(json);
+    }
+    
     public static void main(String[] args) {
         Reactor reactor = new Reactor();
         reactor.state();
         PolicyJenetic policyJenetic = new PolicyJenetic(reactor.maxState());
-        File json = new File(policyJenetic.getClass().getCanonicalName() + ".json");
-        if (json.exists()){
-            try {
-                policyJenetic.load(json);
-            }catch(FileNotFoundException e){
-                e.printStackTrace();
-            }
-        }
+        
         if (!GraphicsEnvironment.isHeadless()){
             policyJenetic.enableGraph();
         }else{
@@ -109,13 +108,19 @@ public class PolicyJenetic implements Serializable {
         chart.setVisible(true);
     }
     
-    public static void play(Reactor reactor, Function<Integer, Byte> f) {
+    public static int play(Reactor reactor, Function<Integer, Byte> f) {
         byte b = f.apply(reactor.state());
-        boolean none = b > -100 && b < 100, up = b > 0;
+        boolean none = b > -50 && b < 50, up = b > 0;
         if (!none){
-            if (up) reactor.raiseControlRod();
-            else reactor.lowerControlRod();
+            if (up){
+                reactor.raiseControlRod();
+                return 2;
+            }else{
+                reactor.lowerControlRod();
+                return 1;
+            }
         }
+        return 0;
     }
     
     public void train() {
@@ -128,17 +133,17 @@ public class PolicyJenetic implements Serializable {
     
     private double eval(Function<Integer, Byte> integerByteFunction) {
         Reactor reactor = reactorPool.obtain();
-        
-        for (int i = 0; i < 20; i++) {
+        int max = 1000;
+        for (int i = 0; i < max; i++) {
             play(reactor, integerByteFunction);
             reactor.update();
             if (reactor.reactorFuckingExploded()) break;
         }
-        return reactor.getPayout();
+        return reactor.getPayout() - max;
     }
     
-    public void play(Reactor r) {
-        play(r, this::getAction);
+    public int play(Reactor r) {
+        return play(r, this::getAction);
     }
     
     public void handleResult(EvolutionResult<ByteGene, Double> g) {

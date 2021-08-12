@@ -12,11 +12,13 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.o7.Fire.Framework.XYRealtimeChart;
 import org.o7.Fire.MachineLearning.Framework.Reactor;
+import org.o7.Fire.MachineLearning.PolicyMaker.PolicyJenetic;
 import org.o7.Fire.MachineLearning.RL4J.ReactorDQN;
 import org.o7.Fire.MachineLearning.RL4J.ReactorMDP;
 import org.o7.Fire.MachineLearning.RL4J.ReactorMDPDiscrete;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
@@ -32,7 +34,7 @@ public class ReactorAutoPlay {
 	static int actionCount = 3;
 	static long saveEvery = 1000;
 	static SarsaLearner learner = new SarsaLearner(stateCount, actionCount);
-	static XYRealtimeChart chart = new XYRealtimeChart("Sarsa Learner", "Iteration", "Value");
+	static XYRealtimeChart chart = new XYRealtimeChart("Machine Learner", "Iteration", "Value");
 	static XYSeries stateC = chart.getSeries("Current State ID"), actionC = chart.getSeries("Current Action ID"), rewardC = chart.getSeries("Reward");
 	static int lastState = 0, lastAction = 0;
 	
@@ -65,6 +67,24 @@ public class ReactorAutoPlay {
 		return cachedAction.get(1);
 	}
 	
+	static PolicyJenetic policyJenetic = null;
+	
+	public static void DQN(Reactor r, long iteration) throws IOException {
+		if (DQN == null){
+			System.out.println("Loading: " + ReactorDQN.save.getAbsolutePath());
+			DQN = DQNPolicy.load(ReactorDQN.save.getAbsoluteFile().getAbsolutePath());
+			System.out.println("Loaded");
+		}
+		
+		INDArray p = Nd4j.create(r.factor(), 1, r.factor().length);
+		int i = DQN.nextAction(p);
+		ReactorMDPDiscrete.doAction(r, i);
+		r.update();
+		stateC.add(iteration, r.getControl() * 100);
+		actionC.add(iteration, i * 30);
+		rewardC.add(iteration, r.getPowerOutput() * 100);
+	}
+	
 	public static void main(String[] args) throws Exception {
 		Reactor r = new Reactor();
 		//RawBasicNeuralNet neuralNet = gson.fromJson(new FileReader(model), RawBasicNeuralNet.class);
@@ -95,8 +115,8 @@ public class ReactorAutoPlay {
 		while (!r.reactorFuckingExploded() && tick < max) {
 			
 			//sarsa(r, tick);
-			DQN(r, tick);
-			
+			//DQN(r, tick);
+			policyJenetic(r, tick);//the victor
 			totalProfit.add(new XYDataItem(tick, r.getPayout()));
 			totalProduced.add(new XYDataItem(tick, r.getMegawattTotalOutput()));
 			heatOvertime.add(new XYDataItem(tick, r.getHeat()));
@@ -111,16 +131,15 @@ public class ReactorAutoPlay {
 		
 	}
 	
-	public static void DQN(Reactor r, long iteration) throws IOException {
-		if (DQN == null){
-			System.out.println("Loading: " + ReactorDQN.save.getAbsolutePath());
-			DQN = DQNPolicy.load(ReactorDQN.save.getAbsoluteFile().getAbsolutePath());
-			System.out.println("Loaded");
+	public static void policyJenetic(Reactor r, long iteration) {
+		if (policyJenetic == null){
+			try {
+				policyJenetic = PolicyJenetic.getTrained();
+			}catch(FileNotFoundException e){
+				throw new RuntimeException(e);
+			}
 		}
-		
-		INDArray p = Nd4j.create(r.factor(), 1, r.factor().length);
-		int i = DQN.nextAction(p);
-		ReactorMDPDiscrete.doAction(r, i);
+		int i = policyJenetic.play(r);
 		r.update();
 		stateC.add(iteration, r.getControl() * 100);
 		actionC.add(iteration, i * 30);
