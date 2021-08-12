@@ -121,10 +121,19 @@ public class Reactor implements PoolObject.Object {
 	}
 	
 	public double totalPower() {
-		return ((double) getTotalOutput() * 1.2f / getIteration());
+		return (getTotalOutput() * 1.2f / getIteration());
 	}
 	
 	public double getPayout() {
 		return reactorFuckingExploded() ? -100f / getIteration() : getTotalOutput() - ((double) getIteration() / factorPower);
+	}
+	
+	public int state() {
+		if (heat == Double.MIN_NORMAL) return 100;
+		return (int) (getHeat() * 100);
+	}
+	
+	public int maxState() {
+		return 101;
 	}
 }
