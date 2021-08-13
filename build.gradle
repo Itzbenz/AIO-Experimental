@@ -177,47 +177,9 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
     from sourceSets.main.allSource
 }
-task baseJar{
-    dependsOn base
-    //collect dependencies needed for desugaring
-    if(new File(sdkD8).exists()) {
-        def files = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(sdkJar)])
-        def dependencies = files.collect { "--classpath $it.path" }.join(" ")
-        def cmd = "${sdkD8} $dependencies --min-api ${minAndroidApi} --output Dex.jar ${modsNname}.jar"
-        def dir = new File(projectDir, "build/libs/");
-        dir.mkdirs()
-        doLast {
-            if (new File(sdkD8).exists() && new File(sdkJar).exists()) {
-                println(cmd)
-                Runtime.getRuntime().exec(cmd, new String[0], dir).waitForProcessOutput(System.out, System.err)
-            }
-        }
-    }else {
-        println "No sdkD8 detected on ANDROID_HOME, skipping desugaring"
-    }
-}
 
-
-task makeJar(type: Jar){
-    dependsOn baseJar
-    if(new File(sdkD8).exists()) {
-        archiveFileName = modsNname + "-Dexed.jar"
-
-        duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
-        if (new File(sdkD8).exists()) {
-            from() {
-                zipTree(new File(projectDir, "build/libs/Dex.jar"))
-            }
-        }
-    }else {
-        println "No sdkD8 detected on ANDROID_HOME, skipping making Dex Jar"
-    }
-    from() {
-        zipTree(new File(projectDir, "build/libs/${modsNname}.jar"))
-    }
-}
 task deploy(type: Jar) {
-    dependsOn makeJar
+    dependsOn base
 }
 artifacts {
     archives sourcesJar
