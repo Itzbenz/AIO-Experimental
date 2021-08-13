@@ -34,11 +34,6 @@ jobs:
     - name: Build mod jar
       run: ./gradlew deploy -PgithubRepo="$GITHUB_REPOSITORY"
 
-    - name: Upload built jar file
-      uses: actions/upload-artifact@v2
-      with:
-        name: o7-Experimental-Mods
-        path: build/libs/o7-Experimental-Mods.jar
 
     - name: Remove Old Release Drafts
       env:
