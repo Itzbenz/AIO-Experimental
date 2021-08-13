@@ -178,7 +178,7 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }
 
-task deploy(type: Jar) {
+task deploy {
     dependsOn base
 }
 artifacts {
